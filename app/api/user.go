@@ -7,6 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func UserGetApi(c *gin.Context) {
+
+}
+
 func UserCreateApi(c *gin.Context) {
 	var data struct {
 		FirstName string
@@ -22,4 +26,12 @@ func UserCreateApi(c *gin.Context) {
 		c.Status(400)
 		return
 	}
+}
+
+func UserUpdateApi(c *gin.Context) {
+
+}
+
+func UserDeleteApi(c *gin.Context) {
+
 }

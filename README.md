@@ -2,7 +2,7 @@
 
 ### Setup
 
-    $ go mod init go-shop-admin
+    $ go mod init go-shop-api
     $ go mod tidy
     $ go get github.com/gin-gonic/gin
     $ go get gorm.io/gorm

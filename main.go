@@ -15,6 +15,9 @@ func init() {
 func main() {
 	r := gin.Default()
 	r.GET("/", api.RootApi)
+	r.GET("/api/v1/user", api.UserGetApi)
 	r.POST("/api/v1/user", api.UserCreateApi)
+	r.PUT("/api/v1/user", api.UserUpdateApi)
+	r.DELETE("/api/v1/user", api.UserDeleteApi)
 	r.Run()
 }

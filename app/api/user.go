@@ -15,11 +15,20 @@ func UserCreateApi(c *gin.Context) {
 	var data struct {
 		FirstName string
 		LastName  string
+		Email     string
+		Password  string
+		IsActive  bool
 	}
 
 	c.Bind(&data)
 
-	user := models.User{FirstName: data.FirstName, LastName: data.LastName}
+	user := models.User{
+		FirstName: data.FirstName,
+		LastName:  data.LastName,
+		Email:     data.Email,
+		Password:  core.HashPassword(data.Password),
+		IsActive:  data.IsActive,
+	}
 	result := core.DB.Create(&user)
 
 	if result.Error != nil {

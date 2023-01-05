@@ -1,8 +1,8 @@
 package api
 
 import (
-	"go-shop-admin/app/core"
-	"go-shop-admin/app/models"
+	"go-shop-api/app/core"
+	"go-shop-api/app/models"
 
 	"github.com/gin-gonic/gin"
 )

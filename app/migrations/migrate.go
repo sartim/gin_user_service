@@ -1,8 +1,8 @@
 package main
 
 import (
-	"go-shop-admin/app/core"
-	"go-shop-admin/app/models"
+	"go-shop-api/app/core"
+	"go-shop-api/app/models"
 )
 
 func init() {

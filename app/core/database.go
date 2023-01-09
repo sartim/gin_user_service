@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -14,7 +15,7 @@ func ConnectToDb() {
 	var err error
 	dsn := os.Getenv("DB_URL")
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	print(DB)
+	fmt.Println(DB)
 
 	if err != nil {
 		log.Fatal("Failed to connect to the datbase")

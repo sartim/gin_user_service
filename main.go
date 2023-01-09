@@ -1,8 +1,8 @@
 package main
 
 import (
-	"go-shop-api/app/api"
 	core "go-shop-api/app/core"
+	"go-shop-api/app/routes"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,9 +19,7 @@ func main() {
 			"status": "ok",
 		})
 	})
-	r.GET("/api/v1/user", api.UserGetApi)
-	r.POST("/api/v1/user", api.UserCreateApi)
-	r.PUT("/api/v1/user", api.UserUpdateApi)
-	r.DELETE("/api/v1/user", api.UserDeleteApi)
+	routes.AuthRoutes(r)
+	routes.UserRoutes(r)
 	r.Run()
 }

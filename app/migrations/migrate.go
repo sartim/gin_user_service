@@ -1,8 +1,8 @@
 package main
 
 import (
-	"go-shop-api/app/core"
-	"go-shop-api/app/models"
+	"gin-shop-api/app/core"
+	"gin-shop-api/app/models"
 )
 
 func init() {

@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"go-shop-api/app/models"
+	"gin-shop-api/app/models"
 	"net/http"
 	"os"
 	"time"

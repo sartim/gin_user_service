@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"go-shop-api/app/core"
-	"go-shop-api/app/models"
+	"gin-shop-api/app/core"
+	"gin-shop-api/app/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

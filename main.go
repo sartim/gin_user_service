@@ -1,8 +1,8 @@
 package main
 
 import (
-	core "go-shop-api/app/core"
-	"go-shop-api/app/routes"
+	core "gin-shop-api/app/core"
+	"gin-shop-api/app/routes"
 
 	"github.com/gin-gonic/gin"
 )

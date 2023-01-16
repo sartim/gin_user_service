@@ -10,4 +10,5 @@ type User struct {
 	Email     string `json:"email"`
 	Password  string `json:"password"`
 	IsActive  bool   `json:"is_active"`
+	Deleted   bool   `json:"deleted"`
 }

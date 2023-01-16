@@ -1,4 +1,4 @@
-module go-shop-api
+module gin-shop-api
 
 go 1.19
 

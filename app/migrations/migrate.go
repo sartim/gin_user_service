@@ -12,4 +12,5 @@ func init() {
 
 func main() {
 	core.DB.AutoMigrate(&models.User{})
+	core.DB.AutoMigrate(&models.Status{})
 }

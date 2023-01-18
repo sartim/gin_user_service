@@ -1,14 +1,17 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type User struct {
 	gorm.Model
-	ID        uint   `json:"id" gorm:"primary_key"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	IsActive  bool   `json:"is_active"`
-	Deleted   bool   `json:"deleted"`
+	ID        uuid.UUID `json:"id" gorm:"primary_key;type:uuid;default:uuid_generate_v4()"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Email     *string   `json:"email"`
+	Password  string    `json:"password"`
+	IsActive  bool      `json:"is_active"`
+	Deleted   bool      `json:"deleted"`
 }

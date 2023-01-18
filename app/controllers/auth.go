@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -37,7 +38,7 @@ func GenerateJWT(c *gin.Context) {
 	var user models.User
 	core.DB.First(&user, "email = ?", input.Email)
 
-	if user.ID == 0 {
+	if user.ID == uuid.Nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to read",
 		})

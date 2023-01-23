@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"gin-shop-api/app/core"
 	"gin-shop-api/app/models"
 	"net/http"
@@ -22,34 +23,28 @@ func GenerateJWT(c *gin.Context) {
 	var input AuthSchema
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
+		core.FailOnError(err, "Field validation failed")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	}
-
-	if c.Bind(&input) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Failed to read",
-		})
-		return
-
 	}
 
 	// Lookup user
 	var user models.User
 	core.DB.First(&user, "email = ?", input.Email)
 
+	fmt.Println(input.Email)
 	if user.ID == uuid.Nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Failed to read",
+			"message": "Invalid email or password",
 		})
 		return
-
 	}
 	// Check password
 	hashed_password := []byte(user.Password)
 	password := []byte(input.Password)
 	err := bcrypt.CompareHashAndPassword(hashed_password, password)
 	if err != nil {
+		core.FailOnError(err, "Password ddoes not match")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})

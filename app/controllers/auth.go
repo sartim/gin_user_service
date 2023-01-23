@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"gin-shop-api/app/core"
 	"gin-shop-api/app/models"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -19,12 +21,36 @@ type AuthSchema struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type ApiError struct {
+	Field string
+	Msg   string
+}
+
+func msgForTag(tag string) string {
+	switch tag {
+	case "required":
+		return "This field is required"
+	case "email":
+		return "Invalid email"
+	}
+	return ""
+}
+
 func GenerateJWT(c *gin.Context) {
 	var input AuthSchema
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
-		core.FailOnError(err, "Field validation failed")
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		var Log = core.Log("ERROR")
+		Log.Printf("%s: %s", "Field validation failed", err)
+
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			out := make([]ApiError, len(ve))
+			for i, fe := range ve {
+				out[i] = ApiError{fe.Field(), msgForTag(fe.Tag())}
+			}
+			c.JSON(http.StatusBadRequest, gin.H{"errors": out})
+		}
 		return
 	}
 
@@ -34,6 +60,8 @@ func GenerateJWT(c *gin.Context) {
 
 	fmt.Println(input.Email)
 	if user.ID == uuid.Nil {
+		var Log = core.Log("ERROR")
+		Log.Printf("%s", "Email does not exist")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})
@@ -44,7 +72,8 @@ func GenerateJWT(c *gin.Context) {
 	password := []byte(input.Password)
 	err := bcrypt.CompareHashAndPassword(hashed_password, password)
 	if err != nil {
-		core.FailOnError(err, "Password ddoes not match")
+		var Log = core.Log("ERROR")
+		Log.Printf("%s: %s", "Password does not match", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})

@@ -68,9 +68,9 @@ func GenerateJWT(c *gin.Context) {
 		return
 	}
 	// Check password
-	hashed_password := []byte(user.Password)
+	hashedPassword := []byte(user.Password)
 	password := []byte(input.Password)
-	err := bcrypt.CompareHashAndPassword(hashed_password, password)
+	err := bcrypt.CompareHashAndPassword(hashedPassword, password)
 	if err != nil {
 		var Log = core.Log("ERROR")
 		Log.Printf("%s: %s", "Password does not match", err)

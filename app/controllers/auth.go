@@ -59,7 +59,7 @@ func GenerateJWT(c *gin.Context) {
 	})
 
 	// Sign and get encoded string
-	var sampleSecretKey = []byte(os.Getenv("SECRET"))
+	var sampleSecretKey = []byte(os.Getenv("SECRET_KEY"))
 	tokenString, err := token.SignedString(sampleSecretKey)
 
 	if err != nil {

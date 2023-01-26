@@ -16,6 +16,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var LogError = core.Log("ERROR")
+
 type AuthSchema struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -41,8 +43,7 @@ func GenerateJWT(c *gin.Context) {
 
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
-		var Log = core.Log("ERROR")
-		Log.Printf("%s: %s", "Field validation failed", err)
+		LogError.Printf("%s: %s", "Field validation failed", err)
 
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
@@ -61,8 +62,7 @@ func GenerateJWT(c *gin.Context) {
 
 	fmt.Println(input.Email)
 	if user.ID == uuid.Nil {
-		var Log = core.Log("ERROR")
-		Log.Printf("%s", "Email does not exist")
+		LogError.Printf("%s", "Email does not exist")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})
@@ -74,8 +74,7 @@ func GenerateJWT(c *gin.Context) {
 	password := []byte(input.Password)
 	err := bcrypt.CompareHashAndPassword(hashedPassword, password)
 	if err != nil {
-		var Log = core.Log("ERROR")
-		Log.Printf("%s: %s", "Password does not match", err)
+		LogError.Printf("%s: %s", "Password does not match", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})
@@ -92,9 +91,8 @@ func GenerateJWT(c *gin.Context) {
 	var sampleSecretKey = []byte(os.Getenv("SECRET"))
 	tokenString, err := token.SignedString(sampleSecretKey)
 
-	fmt.Println(tokenString)
-
 	if err != nil {
+		LogError.Printf("%s: %s", "Failed to create token", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to create token",
 		})

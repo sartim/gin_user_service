@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"gin-shop-api/app/core"
+	"gin-shop-api/app/models"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,18 @@ func init() {
 		logError.Printf("%s: %s", "Error loading env vars", err)
 	}
 	core.ConnectToDb()
+}
+
+func Setup() {
+	core.DB.AutoMigrate(&models.User{})
+	core.DB.AutoMigrate(&models.Status{})
+	fmt.Println("Finished running migrations")
+}
+
+func TearDown() {
+	core.DB.Migrator().DropTable(&models.User{})
+	core.DB.Migrator().DropTable(&models.Status{})
+	fmt.Println("Finished dropping tables")
 }
 
 func SetUpRouter() *gin.Engine {

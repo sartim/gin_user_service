@@ -28,3 +28,4 @@
     $ go get github.com/joho/godotenv
     $ go get github.com/golang-jwt/jwt/v4
     $ go get github.com/google/uuid
+    $ go get github.com/stretchr/testify/assert

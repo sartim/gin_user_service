@@ -1,8 +1,14 @@
 package core
 
 import (
+	"errors"
 	"log"
+	"net/http"
 	"os"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 func LogEvent(logLevel string) *log.Logger {
@@ -50,4 +56,15 @@ func MsgForTag(tag string) string {
 		return "This field is required"
 	}
 	return ""
+}
+
+func ValidateSchema(ctx *gin.Context, err error) {
+	var ve validator.ValidationErrors
+	if errors.As(err, &ve) {
+		body := make(gin.H)
+		for _, fe := range ve {
+			body[strings.ToLower(fe.Field())] = MsgForTag(fe.Tag())
+		}
+		ctx.JSON(http.StatusBadRequest, body)
+	}
 }

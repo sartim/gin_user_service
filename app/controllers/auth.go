@@ -38,6 +38,7 @@ func msgForTag(tag string) string {
 
 func GenerateJWT(c *gin.Context) {
 	var input AuthSchema
+
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
 		var Log = core.Log("ERROR")
@@ -67,6 +68,7 @@ func GenerateJWT(c *gin.Context) {
 		})
 		return
 	}
+
 	// Check password
 	hashedPassword := []byte(user.Password)
 	password := []byte(input.Password)
@@ -79,13 +81,18 @@ func GenerateJWT(c *gin.Context) {
 		})
 		return
 	}
+
 	// Getnerate token
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": user.ID,
 		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(), // Expired in 30 days
 	})
+
 	// Sign and get encoded string
-	tokenString, err := token.SignedString(os.Getenv("SECRET"))
+	var sampleSecretKey = []byte(os.Getenv("SECRET"))
+	tokenString, err := token.SignedString(sampleSecretKey)
+
+	fmt.Println(tokenString)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -93,9 +100,7 @@ func GenerateJWT(c *gin.Context) {
 		})
 		return
 	}
-	// Send it back
-	// c.SetSameSite(http.SameSiteLaxMode)
-	// c.SetCookie("Authorization", tokenString, 3600 * 24 * 30, "", "", false, true)
+
 	c.JSON(http.StatusOK, gin.H{
 		"token": tokenString,
 	})

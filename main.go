@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	core "gin-shop-api/app/core"
 	"gin-shop-api/app/models"
 	"gin-shop-api/app/routes"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -72,10 +75,47 @@ func dropTables() {
 	}
 }
 
+func createSuperUser() {
+	if action == "create_super_user" {
+		first_name := StringPrompt("first_name:")
+		last_name := StringPrompt("last_name")
+		email := StringPrompt("email")
+		password := StringPrompt("password")
+
+		user := models.User{
+			FirstName: first_name,
+			LastName:  last_name,
+			Email:     email,
+			Password:  core.HashPassword(password),
+			IsActive:  true,
+		}
+		result := core.DB.Create(&user)
+
+		if result.Error != nil {
+			panic(result.Error)
+		}
+		fmt.Println("Finished creating super user record")
+	}
+}
+
+func StringPrompt(label string) string {
+	var s string
+	r := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Fprint(os.Stderr, label+" ")
+		s, _ = r.ReadString('\n')
+		if s != "" {
+			break
+		}
+	}
+	return strings.TrimSpace(s)
+}
+
 func main() {
 	flag.StringVar(&action, "action", "", "action e.g. run_server, make_migrations, drop_tables")
 	flag.Parse()
 	runServer()
 	makeMigrations()
 	dropTables()
+	createSuperUser()
 }

@@ -1,18 +1,15 @@
 package controllers
 
 import (
-	"errors"
 	"fmt"
 	"gin-shop-api/app/core"
 	"gin-shop-api/app/models"
 	"gin-shop-api/app/schemas"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -26,15 +23,7 @@ func GenerateJWT(c *gin.Context) {
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
 		LogError.Printf("%s: %s", "Field validation failed", err)
-
-		var ve validator.ValidationErrors
-		if errors.As(err, &ve) {
-			body := make(gin.H)
-			for _, fe := range ve {
-				body[strings.ToLower(fe.Field())] = core.MsgForTag(fe.Tag())
-			}
-			c.JSON(http.StatusBadRequest, body)
-		}
+		core.ValidateSchema(c, err)
 		return
 	}
 

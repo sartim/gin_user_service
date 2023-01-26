@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"gin-shop-api/app/core"
 	"gin-shop-api/app/models"
+	"gin-shop-api/app/schemas"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,28 +20,8 @@ import (
 
 var LogError = core.Log("ERROR")
 
-type AuthSchema struct {
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
-type ApiError struct {
-	Field string
-	Msg   string
-}
-
-func msgForTag(tag string) string {
-	switch tag {
-	case "required":
-		return "This field is required"
-	case "email":
-		return "Invalid email"
-	}
-	return ""
-}
-
 func GenerateJWT(c *gin.Context) {
-	var input AuthSchema
+	var input schemas.AuthSchema
 
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -47,11 +29,11 @@ func GenerateJWT(c *gin.Context) {
 
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
-			out := make([]ApiError, len(ve))
-			for i, fe := range ve {
-				out[i] = ApiError{fe.Field(), msgForTag(fe.Tag())}
+			body := make(gin.H)
+			for _, fe := range ve {
+				body[strings.ToLower(fe.Field())] = core.MsgForTag(fe.Tag())
 			}
-			c.JSON(http.StatusBadRequest, gin.H{"errors": out})
+			c.JSON(http.StatusBadRequest, body)
 		}
 		return
 	}

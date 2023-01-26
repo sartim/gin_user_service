@@ -1,12 +1,12 @@
-name: Porduction pipeline 
+name: Master branch pipeline
 
 on:
   push:
     branches: [ master ]
 
 jobs:
-  build-n-deploy:
-    name: Build and deploy to production
+  test:
+    name: Master branch pipeline
     runs-on: ubuntu-latest
     services:
       postgres:

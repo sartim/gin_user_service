@@ -43,3 +43,11 @@ func Log(logLevel string) *log.Logger {
 
 	return logEvent
 }
+
+func MsgForTag(tag string) string {
+	switch tag {
+	case "required":
+		return "This field is required"
+	}
+	return ""
+}

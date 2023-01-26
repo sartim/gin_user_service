@@ -13,7 +13,12 @@
     $ go run main.go --action=drop_tables 
 
 ###### Create super user
+
     $ go run main.go --action=create_super_user 
+
+###### Running unittests
+
+    $ go test -v ./tests
 
 ###### Run server
     $ go run main.go --action=run_server 

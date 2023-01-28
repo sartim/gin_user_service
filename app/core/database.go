@@ -2,8 +2,6 @@ package core
 
 import (
 	"fmt"
-	"log"
-	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -14,7 +12,7 @@ var DB *gorm.DB
 
 func ConnectToDb() {
 	var err error
-	dsn := os.Getenv("DB_URL")
+	dsn := DatabaseConfig()
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
@@ -23,6 +21,6 @@ func ConnectToDb() {
 	fmt.Println(DB)
 
 	if err != nil {
-		log.Fatal("Failed to connect to the datbase")
+		LogError.Printf("%s: %s", "Failed to connect to the datbase", err)
 	}
 }

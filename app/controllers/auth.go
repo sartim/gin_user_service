@@ -15,14 +15,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var LogError = core.Log("ERROR")
-
 func GenerateJWT(c *gin.Context) {
 	var input schemas.AuthSchema
 
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
-		LogError.Printf("%s: %s", "Field validation failed", err)
+		core.LogError.Printf("%s: %s", "Field validation failed", err)
 		core.ValidateSchema(c, err)
 		return
 	}
@@ -33,7 +31,7 @@ func GenerateJWT(c *gin.Context) {
 
 	fmt.Println(input.Email)
 	if user.ID == uuid.Nil {
-		LogError.Printf("%s", "Email does not exist")
+		core.LogError.Printf("%s", "Email does not exist")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})
@@ -45,7 +43,7 @@ func GenerateJWT(c *gin.Context) {
 	password := []byte(input.Password)
 	err := bcrypt.CompareHashAndPassword(hashedPassword, password)
 	if err != nil {
-		LogError.Printf("%s: %s", "Password does not match", err)
+		core.LogError.Printf("%s: %s", "Password does not match", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})
@@ -63,7 +61,7 @@ func GenerateJWT(c *gin.Context) {
 	tokenString, err := token.SignedString(sampleSecretKey)
 
 	if err != nil {
-		LogError.Printf("%s: %s", "Failed to create token", err)
+		core.LogError.Printf("%s: %s", "Failed to create token", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to create token",
 		})

@@ -3,6 +3,7 @@ package controllers
 import (
 	"gin-shop-api/app/core"
 	"gin-shop-api/app/models"
+	"gin-shop-api/app/schemas"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,18 +27,10 @@ func UserGetByID(c *gin.Context) {
 	})
 }
 
-type UserSchema struct {
-	FirstName string `json:"first_name" binding:"required"`
-	LastName  string `json:"last_name" binding:"required"`
-	Email     string `json:"email" binding:"required"`
-	Password  string `json:"password" binding:"required"`
-	IsActive  bool   `json:"is_active" binding:"required"`
-}
-
 func UserCreate(c *gin.Context) {
 
 	// Validate input
-	var input UserSchema
+	var input schemas.UserSchema
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -63,7 +56,7 @@ func UserCreate(c *gin.Context) {
 
 func UserUpdate(c *gin.Context) {
 	id := c.Param("id")
-	var input UserSchema
+	var input schemas.UserSchema
 	c.Bind(&input)
 	var user models.User
 	core.DB.First(&user, id)

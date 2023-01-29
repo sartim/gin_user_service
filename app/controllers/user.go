@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func UserGetAll(c *gin.Context) {
@@ -38,12 +39,16 @@ func UserCreate(c *gin.Context) {
 
 	c.Bind(&input)
 
+	id := uuid.New()
+
 	user := models.User{
+		ID:        id,
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,
 		Password:  core.HashPassword(input.Password),
 		IsActive:  input.IsActive,
+		Deleted:   false,
 	}
 	result := core.DB.Create(&user)
 

@@ -2,9 +2,11 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -67,4 +69,13 @@ func ValidateSchema(ctx *gin.Context, err error) {
 		}
 		ctx.JSON(http.StatusBadRequest, body)
 	}
+}
+
+func GenerateUUID() string {
+	newUUID, err := exec.Command("uuidgen").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	newUUIDSttring := fmt.Sprint(newUUID)
+	return newUUIDSttring
 }

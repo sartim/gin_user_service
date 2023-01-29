@@ -23,6 +23,7 @@
 ##### Running coverage
 
     $ go test -v ./tests -coverprofile=coverage.out
+    $ go tool cover -html=coverage.out
 
 ###### Run server
     $ go run main.go --action=run_server 

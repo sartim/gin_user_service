@@ -20,6 +20,10 @@
 
     $ go test -v ./tests
 
+##### Running coverage
+
+    $ go test -v ./tests -coverprofile=coverage.out
+
 ###### Run server
     $ go run main.go --action=run_server 
 

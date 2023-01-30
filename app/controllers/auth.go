@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"gin-shop-api/app/core"
 	"gin-shop-api/app/models"
 	"gin-shop-api/app/schemas"
@@ -29,7 +28,6 @@ func GenerateJWT(c *gin.Context) {
 	var user models.User
 	core.DB.First(&user, "email = ?", input.Email)
 
-	fmt.Println(input.Email)
 	if user.ID == uuid.Nil {
 		core.LogError.Printf("%s", "Email does not exist")
 		c.JSON(http.StatusBadRequest, gin.H{

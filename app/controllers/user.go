@@ -10,6 +10,14 @@ import (
 )
 
 func UserGetAll(c *gin.Context) {
+	// Validate headers
+	header := &schemas.HeaderSchema{}
+	if err := c.ShouldBindHeader(header); err != nil {
+		core.LogError.Printf("%s: %s", "Missing header", err)
+		core.ValidateSchema(c, err, "header")
+		return
+	}
+
 	var users []models.User
 	core.DB.Find(&users)
 	c.JSON(200, gin.H{
@@ -19,6 +27,14 @@ func UserGetAll(c *gin.Context) {
 }
 
 func UserGetByID(c *gin.Context) {
+	// Validate headers
+	header := &schemas.HeaderSchema{}
+	if err := c.ShouldBindHeader(header); err != nil {
+		core.LogError.Printf("%s: %s", "Missing header", err)
+		core.ValidateSchema(c, err, "header")
+		return
+	}
+
 	id := c.Param("id")
 	var user models.User
 	core.DB.First(&user, id)
@@ -28,6 +44,13 @@ func UserGetByID(c *gin.Context) {
 }
 
 func UserCreate(c *gin.Context) {
+	// Validate headers
+	header := &schemas.HeaderSchema{}
+	if err := c.ShouldBindHeader(header); err != nil {
+		core.LogError.Printf("%s: %s", "Missing header", err)
+		core.ValidateSchema(c, err, "header")
+		return
+	}
 
 	// Validate input
 	var input schemas.UserSchema
@@ -58,6 +81,14 @@ func UserCreate(c *gin.Context) {
 }
 
 func UserUpdate(c *gin.Context) {
+	// Validate headers
+	header := &schemas.HeaderSchema{}
+	if err := c.ShouldBindHeader(header); err != nil {
+		core.LogError.Printf("%s: %s", "Missing header", err)
+		core.ValidateSchema(c, err, "header")
+		return
+	}
+
 	id := c.Param("id")
 	var input schemas.UserSchema
 	c.Bind(&input)
@@ -75,6 +106,14 @@ func UserUpdate(c *gin.Context) {
 }
 
 func UserDelete(c *gin.Context) {
+	// Validate headers
+	header := &schemas.HeaderSchema{}
+	if err := c.ShouldBindHeader(header); err != nil {
+		core.LogError.Printf("%s: %s", "Missing header", err)
+		core.ValidateSchema(c, err, "header")
+		return
+	}
+
 	id := c.Param("id")
 	core.DB.Delete(&models.User{}, id)
 	c.Status(200)

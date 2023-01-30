@@ -17,6 +17,8 @@ func TestGetUsers(t *testing.T) {
 	r := SetUpRouter()
 	r.GET("/api/v1/user", controllers.UserGetAll)
 	req, _ := http.NewRequest("GET", "/api/v1/user", nil)
+	req.Header.Set("Authorization", "1234")
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 

@@ -1,12 +1,7 @@
 package core
 
 import (
-	"errors"
-	"net/http"
-	"strings"
-
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -22,16 +17,5 @@ func CORSMiddleware() gin.HandlerFunc {
 		}
 
 		ctx.Next()
-	}
-}
-
-func ValidateSchema(ctx *gin.Context, err error) {
-	var ve validator.ValidationErrors
-	if errors.As(err, &ve) {
-		body := make(gin.H)
-		for _, fe := range ve {
-			body[strings.ToLower(fe.Field())] = MsgForTag(fe.Tag())
-		}
-		ctx.JSON(http.StatusBadRequest, body)
 	}
 }

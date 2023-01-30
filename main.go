@@ -53,6 +53,7 @@ func runServer() {
 			)
 		}))
 		r.Use(gin.Recovery())
+		r.Use(core.CORSMiddleware())
 		healthCheckRoute(r)
 		registerRoutes(r)
 		r.Run()

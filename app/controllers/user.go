@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func UserGetAll(c *gin.Context) {
@@ -39,7 +38,7 @@ func UserCreate(c *gin.Context) {
 
 	c.Bind(&input)
 
-	id := uuid.New()
+	id := core.GenerateUUID()
 
 	user := models.User{
 		ID:        id,
@@ -53,7 +52,6 @@ func UserCreate(c *gin.Context) {
 	result := core.DB.Create(&user)
 
 	if result.Error != nil {
-		// c.Status(400)
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Record was not saved"})
 		return
 	}

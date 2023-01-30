@@ -57,7 +57,13 @@ func ValidateSchema(ctx *gin.Context, err error, fieldType string) {
 		body := []Dict{}
 		for _, fe := range ve {
 			errors := Dict{}
-			errors[strings.ToLower(fe.Field())] = MsgForTag(fe.Tag(), fieldType)
+			if fe.Field() == "ContentType" {
+				errors["Content-Type"] = MsgForTag(fe.Tag(), fieldType)
+			} else if fe.Field() == "Authorization" {
+				errors[fe.Field()] = MsgForTag(fe.Tag(), fieldType)
+			} else {
+				errors[strings.ToLower(fe.Field())] = MsgForTag(fe.Tag(), fieldType)
+			}
 
 			body = append(body, errors)
 		}

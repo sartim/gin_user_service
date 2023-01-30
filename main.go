@@ -61,7 +61,7 @@ func runServer() {
 }
 
 func makeMigrations() {
-	if action == "make_migrations" {
+	if action == "create_tables" {
 		core.DB.AutoMigrate(&models.User{})
 		core.DB.AutoMigrate(&models.Status{})
 		fmt.Println("Finished running migrations")

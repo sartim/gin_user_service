@@ -1,16 +1,10 @@
 package core
 
 import (
-	"errors"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
-	"os/exec"
-	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 func LogEvent(logLevel string) *log.Logger {
@@ -60,22 +54,6 @@ func MsgForTag(tag string) string {
 	return ""
 }
 
-func ValidateSchema(ctx *gin.Context, err error) {
-	var ve validator.ValidationErrors
-	if errors.As(err, &ve) {
-		body := make(gin.H)
-		for _, fe := range ve {
-			body[strings.ToLower(fe.Field())] = MsgForTag(fe.Tag())
-		}
-		ctx.JSON(http.StatusBadRequest, body)
-	}
-}
-
-func GenerateUUID() string {
-	newUUID, err := exec.Command("uuidgen").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	newUUIDSttring := fmt.Sprint(newUUID)
-	return newUUIDSttring
+func GenerateUUID() uuid.UUID {
+	return uuid.New()
 }

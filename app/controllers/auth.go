@@ -21,7 +21,7 @@ func GenerateJWT(c *gin.Context) {
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
 		core.LogError.Printf("%s: %s", "Field validation failed", err)
-		core.ValidateSchema(c, err)
+		core.ValidateSchema(c, err, "body")
 		return
 	}
 

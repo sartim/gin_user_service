@@ -84,6 +84,7 @@ func createSuperUser() {
 		password := StringPrompt("password")
 
 		user := models.User{
+			ID:        core.GenerateUUID(),
 			FirstName: first_name,
 			LastName:  last_name,
 			Email:     email,

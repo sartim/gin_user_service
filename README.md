@@ -7,7 +7,7 @@
     $ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 ###### Make migrations
-    $ go run main.go --action=make_migrations 
+    $ go run main.go --action=create_tables 
 
 ###### Drop tables
     $ go run main.go --action=drop_tables 

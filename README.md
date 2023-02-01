@@ -7,14 +7,14 @@
     $ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 ###### Make migrations
-    $ go run main.go --action=create_tables 
+    $ go run ./cmd main.go --action=create_tables 
 
 ###### Drop tables
-    $ go run main.go --action=drop_tables 
+    $ go run ./cmd main.go --action=drop_tables 
 
 ###### Create super user
 
-    $ go run main.go --action=create_super_user 
+    $ go run ./cmd main.go --action=create_super_user 
 
 ###### Running unittests
 

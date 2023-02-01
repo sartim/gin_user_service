@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"gin-shop-api/app/core"
-	"gin-shop-api/app/models"
-	"gin-shop-api/app/schemas"
+	"gin-shop-api/internal/core/helpers"
+	"gin-shop-api/internal/core/models"
+	"gin-shop-api/internal/core/schemas"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,8 +13,8 @@ func UserGetAll(c *gin.Context) {
 	// Validate headers
 	var header schemas.HeaderSchema
 	if err := c.ShouldBindHeader(&header); err != nil {
-		core.LogError.Printf("%s: %s", "Missing header", err)
-		core.ValidateSchema(c, err, "header")
+		helpers.LogError.Printf("%s: %s", "Missing header", err)
+		helpers.ValidateSchema(c, err, "header")
 		return
 	}
 
@@ -22,13 +22,13 @@ func UserGetAll(c *gin.Context) {
 	contentType := c.Request.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		c.JSON(400, gin.H{
-			"errors": []core.Dict{{"Content-Type": "Not application/json"}},
+			"errors": []helpers.Dict{{"Content-Type": "Not application/json"}},
 		})
 		return
 	}
 
 	var users []models.User
-	core.DB.Find(&users)
+	helpers.DB.Find(&users)
 	c.JSON(200, gin.H{
 		"data": users,
 	})
@@ -39,8 +39,8 @@ func UserGetByID(c *gin.Context) {
 	// Validate headers
 	var header schemas.HeaderSchema
 	if err := c.ShouldBindHeader(&header); err != nil {
-		core.LogError.Printf("%s: %s", "Missing header", err)
-		core.ValidateSchema(c, err, "header")
+		helpers.LogError.Printf("%s: %s", "Missing header", err)
+		helpers.ValidateSchema(c, err, "header")
 		return
 	}
 
@@ -48,14 +48,14 @@ func UserGetByID(c *gin.Context) {
 	contentType := c.Request.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		c.JSON(400, gin.H{
-			"errors": []core.Dict{{"Content-Type": "Not application/json"}},
+			"errors": []helpers.Dict{{"Content-Type": "Not application/json"}},
 		})
 		return
 	}
 
 	id := c.Param("id")
 	var user models.User
-	core.DB.First(&user, id)
+	helpers.DB.First(&user, id)
 	c.JSON(200, gin.H{
 		"data": user,
 	})
@@ -65,8 +65,8 @@ func UserCreate(c *gin.Context) {
 	// Validate headers
 	var header schemas.HeaderSchema
 	if err := c.ShouldBindHeader(&header); err != nil {
-		core.LogError.Printf("%s: %s", "Missing header", err)
-		core.ValidateSchema(c, err, "header")
+		helpers.LogError.Printf("%s: %s", "Missing header", err)
+		helpers.ValidateSchema(c, err, "header")
 		return
 	}
 
@@ -74,7 +74,7 @@ func UserCreate(c *gin.Context) {
 	contentType := c.Request.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		c.JSON(400, gin.H{
-			"errors": []core.Dict{{"Content-Type": "Not application/json"}},
+			"errors": []helpers.Dict{{"Content-Type": "Not application/json"}},
 		})
 		return
 	}
@@ -88,18 +88,18 @@ func UserCreate(c *gin.Context) {
 
 	c.Bind(&input)
 
-	id := core.GenerateUUID()
+	id := helpers.GenerateUUID()
 
 	user := models.User{
 		ID:        id,
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,
-		Password:  core.HashPassword(input.Password),
+		Password:  helpers.HashPassword(input.Password),
 		IsActive:  input.IsActive,
 		Deleted:   false,
 	}
-	result := core.DB.Create(&user)
+	result := helpers.DB.Create(&user)
 
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Record was not saved"})
@@ -111,8 +111,8 @@ func UserUpdate(c *gin.Context) {
 	// Validate headers
 	var header schemas.HeaderSchema
 	if err := c.ShouldBindHeader(&header); err != nil {
-		core.LogError.Printf("%s: %s", "Missing header", err)
-		core.ValidateSchema(c, err, "header")
+		helpers.LogError.Printf("%s: %s", "Missing header", err)
+		helpers.ValidateSchema(c, err, "header")
 		return
 	}
 
@@ -120,7 +120,7 @@ func UserUpdate(c *gin.Context) {
 	contentType := c.Request.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		c.JSON(400, gin.H{
-			"errors": []core.Dict{{"Content-Type": "Not application/json"}},
+			"errors": []helpers.Dict{{"Content-Type": "Not application/json"}},
 		})
 		return
 	}
@@ -129,8 +129,8 @@ func UserUpdate(c *gin.Context) {
 	var input schemas.UserSchema
 	c.Bind(&input)
 	var user models.User
-	core.DB.First(&user, id)
-	core.DB.Model(&user).Updates(models.User{
+	helpers.DB.First(&user, id)
+	helpers.DB.Model(&user).Updates(models.User{
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,
@@ -145,8 +145,8 @@ func UserDelete(c *gin.Context) {
 	// Validate headers
 	var header schemas.HeaderSchema
 	if err := c.ShouldBindHeader(&header); err != nil {
-		core.LogError.Printf("%s: %s", "Missing header", err)
-		core.ValidateSchema(c, err, "header")
+		helpers.LogError.Printf("%s: %s", "Missing header", err)
+		helpers.ValidateSchema(c, err, "header")
 		return
 	}
 
@@ -154,12 +154,12 @@ func UserDelete(c *gin.Context) {
 	contentType := c.Request.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		c.JSON(400, gin.H{
-			"errors": []core.Dict{{"Content-Type": "Not application/json"}},
+			"errors": []helpers.Dict{{"Content-Type": "Not application/json"}},
 		})
 		return
 	}
 
 	id := c.Param("id")
-	core.DB.Delete(&models.User{}, id)
+	helpers.DB.Delete(&models.User{}, id)
 	c.Status(200)
 }

@@ -1,8 +1,8 @@
-package core
+package helpers
 
 import (
 	"fmt"
-	"gin-shop-api/app/models"
+	"gin-shop-api/internal/core/models"
 	"net/http"
 	"os"
 	"strings"

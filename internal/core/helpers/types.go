@@ -1,4 +1,4 @@
-package core
+package helpers
 
 type Dict map[string]any
 

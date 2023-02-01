@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"gin-shop-api/app/core"
-	"gin-shop-api/app/models"
+	"gin-shop-api/internal/core/helpers"
+	"gin-shop-api/internal/core/models"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,21 +14,21 @@ func init() {
 	gin.ForceConsoleColor()
 	err := godotenv.Load("../.env")
 	if err != nil {
-		var logError = core.Log("ERROR")
+		var logError = helpers.Log("ERROR")
 		logError.Printf("%s: %s", "Error loading env vars", err)
 	}
-	core.ConnectToDb()
+	helpers.ConnectToDb()
 }
 
 func Setup() {
-	core.DB.AutoMigrate(&models.User{})
-	core.DB.AutoMigrate(&models.Status{})
+	helpers.DB.AutoMigrate(&models.User{})
+	helpers.DB.AutoMigrate(&models.Status{})
 	fmt.Println("Finished running migrations")
 }
 
 func TearDown() {
-	core.DB.Migrator().DropTable(&models.User{})
-	core.DB.Migrator().DropTable(&models.Status{})
+	helpers.DB.Migrator().DropTable(&models.User{})
+	helpers.DB.Migrator().DropTable(&models.Status{})
 	fmt.Println("Finished dropping tables")
 }
 

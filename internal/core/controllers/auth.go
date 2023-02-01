@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"gin-shop-api/app/core"
-	"gin-shop-api/app/models"
-	"gin-shop-api/app/schemas"
+	"gin-shop-api/internal/core/helpers"
+	"gin-shop-api/internal/core/models"
+	"gin-shop-api/internal/core/schemas"
 	"net/http"
 	"os"
 	"time"
@@ -19,17 +19,17 @@ func GenerateJWT(c *gin.Context) {
 
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
-		core.LogError.Printf("%s: %s", "Field validation failed", err)
-		core.ValidateSchema(c, err, "body")
+		helpers.LogError.Printf("%s: %s", "Field validation failed", err)
+		helpers.ValidateSchema(c, err, "body")
 		return
 	}
 
 	// Lookup user
 	var user models.User
-	core.DB.First(&user, "email = ?", input.Email)
+	helpers.DB.First(&user, "email = ?", input.Email)
 
 	if user.ID == uuid.Nil {
-		core.LogError.Printf("%s", "Email does not exist")
+		helpers.LogError.Printf("%s", "Email does not exist")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})
@@ -41,7 +41,7 @@ func GenerateJWT(c *gin.Context) {
 	password := []byte(input.Password)
 	err := bcrypt.CompareHashAndPassword(hashedPassword, password)
 	if err != nil {
-		core.LogError.Printf("%s: %s", "Password does not match", err)
+		helpers.LogError.Printf("%s: %s", "Password does not match", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})
@@ -59,7 +59,7 @@ func GenerateJWT(c *gin.Context) {
 	tokenString, err := token.SignedString(sampleSecretKey)
 
 	if err != nil {
-		core.LogError.Printf("%s: %s", "Failed to create token", err)
+		helpers.LogError.Printf("%s: %s", "Failed to create token", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to create token",
 		})

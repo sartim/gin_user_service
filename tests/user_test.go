@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"gin-shop-api/app/controllers"
+	"gin-shop-api/internal/core/controllers"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"

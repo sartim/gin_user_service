@@ -5,6 +5,7 @@ import (
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/repository"
 	"gin-shop-api/internal/schemas"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -20,7 +21,7 @@ func GenerateJWT(c *gin.Context) {
 
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
-		helpers.LogError.Printf("%s: %s", "Field validation failed", err)
+		log.Printf("%s: %s", "Field validation failed", err)
 		helpers.ValidateSchema(c, err, "body")
 		return
 	}
@@ -30,7 +31,7 @@ func GenerateJWT(c *gin.Context) {
 	repository.DB.First(&user, "email = ?", input.Email)
 
 	if user.ID == uuid.Nil {
-		helpers.LogError.Printf("%s", "Email does not exist")
+		log.Printf("%s", "Email does not exist")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})
@@ -42,14 +43,14 @@ func GenerateJWT(c *gin.Context) {
 	password := []byte(input.Password)
 	err := bcrypt.CompareHashAndPassword(hashedPassword, password)
 	if err != nil {
-		helpers.LogError.Printf("%s: %s", "Password does not match", err)
+		log.Printf("%s: %s", "Password does not match", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid email or password",
 		})
 		return
 	}
 
-	// Getnerate token
+	// Generate token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": user.ID,
 		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(), // Expired in 30 days
@@ -60,7 +61,7 @@ func GenerateJWT(c *gin.Context) {
 	tokenString, err := token.SignedString(sampleSecretKey)
 
 	if err != nil {
-		helpers.LogError.Printf("%s: %s", "Failed to create token", err)
+		log.Printf("%s: %s", "Failed to create token", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to create token",
 		})

@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"gin-shop-api/internal/controllers"
 	"gin-shop-api/internal/helpers"
+	"gin-shop-api/internal/middleware"
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/repository"
-	"gin-shop-api/internal/routes"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 var action string
@@ -22,11 +23,6 @@ func init() {
 	gin.ForceConsoleColor()
 	helpers.LoadEnvVariables()
 	repository.ConnectToDb()
-}
-
-func registerRoutes(r *gin.Engine) {
-	routes.AuthRoutes(r)
-	routes.UserRoutes(r)
 }
 
 func healthCheckRoute(r *gin.Engine) {
@@ -55,9 +51,8 @@ func runServer() {
 			)
 		}))
 		r.Use(gin.Recovery())
-		r.Use(helpers.CORSMiddleware())
+		r.Use(middleware.CORSMiddleware())
 		healthCheckRoute(r)
-		registerRoutes(r)
 
 		userCtrl := controllers.NewUserController(repository.DB)
 		userCtrl.RegisterRoutes(r.Group("/api"))
@@ -89,7 +84,7 @@ func createSuperUser() {
 		password := StringPrompt("password")
 
 		user := models.User{
-			ID:        helpers.GenerateUUID(),
+			ID:        uuid.New(),
 			FirstName: first_name,
 			LastName:  last_name,
 			Email:     email,

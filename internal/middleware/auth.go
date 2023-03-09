@@ -1,4 +1,4 @@
-package helpers
+package middleware
 
 import (
 	"fmt"
@@ -13,22 +13,6 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 )
-
-func CORSMiddleware() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		ctx.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		ctx.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		ctx.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		ctx.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
-
-		if ctx.Request.Method == "OPTIONS" {
-			ctx.AbortWithStatus(204)
-			return
-		}
-
-		ctx.Next()
-	}
-}
 
 func RequireAuth(c *gin.Context) {
 	authorizationValue := c.Request.Header.Get("Authorization")

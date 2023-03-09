@@ -16,7 +16,7 @@ func NewUserController(db *gorm.DB) *UserController {
 	return &UserController{NewBaseController(db, user)}
 }
 
-func (ctrl *UserController) RegisterRoutes(router *gin.RouterGroup) {
+func (ctrl *UserController) RegisterUserRoutes(router *gin.RouterGroup) {
 	userRouter := router.Group("/users")
 	{
 		userRouter.GET("", ctrl.GetAll)

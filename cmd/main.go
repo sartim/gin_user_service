@@ -33,6 +33,17 @@ func healthCheckRoute(r *gin.Engine) {
 	})
 }
 
+func RegisterRoutes(r *gin.Engine) {
+	APIVersion := "/api/v1"
+
+	// Auth API
+	controllers.RegisterAuthRoutes(r.Group(APIVersion))
+
+	// User API
+	userCtrl := controllers.NewUserController(repository.DB)
+	userCtrl.RegisterUserRoutes(r.Group(APIVersion))
+}
+
 func runServer() {
 	if action == "run_server" {
 		r := gin.Default()
@@ -53,9 +64,8 @@ func runServer() {
 		r.Use(gin.Recovery())
 		r.Use(middleware.CORSMiddleware())
 		healthCheckRoute(r)
+		RegisterRoutes(r)
 
-		userCtrl := controllers.NewUserController(repository.DB)
-		userCtrl.RegisterRoutes(r.Group("/api"))
 		r.Run()
 	}
 }

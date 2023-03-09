@@ -72,3 +72,10 @@ func GenerateJWT(c *gin.Context) {
 		"token": tokenString,
 	})
 }
+
+func RegisterAuthRoutes(router *gin.RouterGroup) {
+	authRouter := router.Group("/auth")
+	{
+		authRouter.POST("/generate-jwt", GenerateJWT)
+	}
+}

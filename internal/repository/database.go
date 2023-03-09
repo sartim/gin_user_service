@@ -1,7 +1,9 @@
-package helpers
+package repository
 
 import (
 	"fmt"
+	"gin-shop-api/internal/config"
+	"log"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -12,7 +14,7 @@ var DB *gorm.DB
 
 func ConnectToDb() {
 	var err error
-	dsn := DatabaseConfig()
+	dsn := config.DatabaseConfig()
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
@@ -21,6 +23,6 @@ func ConnectToDb() {
 	fmt.Println(DB)
 
 	if err != nil {
-		LogError.Printf("%s: %s", "Failed to connect to the datbase", err)
+		log.Printf("%s: %s", "Failed to connect to the datbase", err)
 	}
 }

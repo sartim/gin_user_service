@@ -2,7 +2,8 @@ package helpers
 
 import (
 	"fmt"
-	"gin-shop-api/internal/core/models"
+	"gin-shop-api/internal/models"
+	"gin-shop-api/internal/repository"
 	"net/http"
 	"os"
 	"strings"
@@ -60,7 +61,7 @@ func RequireAuth(c *gin.Context) {
 		var user = models.User{ID: uuid.Must(uuid.Parse(fmt.Sprint(claims["sub"])))}
 		fmt.Println(user)
 
-		DB.First(&user)
+		repository.DB.First(&user)
 
 		if user.ID == uuid.Nil {
 			c.AbortWithStatus(http.StatusUnauthorized)

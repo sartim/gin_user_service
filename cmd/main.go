@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	core "gin-shop-api/app/core"
-	"gin-shop-api/app/models"
-	"gin-shop-api/app/routes"
+	"gin-shop-api/internal/controllers"
+	"gin-shop-api/internal/helpers"
+	"gin-shop-api/internal/models"
+	"gin-shop-api/internal/repository"
+	"gin-shop-api/internal/routes"
 	"os"
 	"strings"
 	"time"
@@ -18,8 +20,8 @@ var action string
 
 func init() {
 	gin.ForceConsoleColor()
-	core.LoadEnvVariables()
-	core.ConnectToDb()
+	helpers.LoadEnvVariables()
+	repository.ConnectToDb()
 }
 
 func registerRoutes(r *gin.Engine) {
@@ -53,25 +55,28 @@ func runServer() {
 			)
 		}))
 		r.Use(gin.Recovery())
-		r.Use(core.CORSMiddleware())
+		r.Use(helpers.CORSMiddleware())
 		healthCheckRoute(r)
 		registerRoutes(r)
+
+		userCtrl := controllers.NewUserController(repository.DB)
+		userCtrl.RegisterRoutes(r.Group("/api"))
 		r.Run()
 	}
 }
 
 func makeMigrations() {
 	if action == "create_tables" {
-		core.DB.AutoMigrate(&models.User{})
-		core.DB.AutoMigrate(&models.Status{})
+		repository.DB.AutoMigrate(&models.User{})
+		repository.DB.AutoMigrate(&models.Status{})
 		fmt.Println("Finished running migrations")
 	}
 }
 
 func dropTables() {
 	if action == "drop_tables" {
-		core.DB.Migrator().DropTable(&models.User{})
-		core.DB.Migrator().DropTable(&models.Status{})
+		repository.DB.Migrator().DropTable(&models.User{})
+		repository.DB.Migrator().DropTable(&models.Status{})
 		fmt.Println("Finished dropping tables")
 	}
 }
@@ -84,14 +89,14 @@ func createSuperUser() {
 		password := StringPrompt("password")
 
 		user := models.User{
-			ID:        core.GenerateUUID(),
+			ID:        helpers.GenerateUUID(),
 			FirstName: first_name,
 			LastName:  last_name,
 			Email:     email,
-			Password:  core.HashPassword(password),
+			Password:  helpers.HashPassword(password),
 			IsActive:  true,
 		}
-		result := core.DB.Create(&user)
+		result := repository.DB.Create(&user)
 
 		if result.Error != nil {
 			panic(result.Error)

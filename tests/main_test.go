@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"gin-shop-api/internal/core/helpers"
-	"gin-shop-api/internal/core/models"
+	"gin-shop-api/internal/models"
 	"time"
 
 	"github.com/gin-gonic/gin"

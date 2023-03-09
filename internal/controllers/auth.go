@@ -1,9 +1,10 @@
 package controllers
 
 import (
-	"gin-shop-api/internal/core/helpers"
-	"gin-shop-api/internal/core/models"
-	"gin-shop-api/internal/core/schemas"
+	"gin-shop-api/internal/helpers"
+	"gin-shop-api/internal/models"
+	"gin-shop-api/internal/repository"
+	"gin-shop-api/internal/schemas"
 	"net/http"
 	"os"
 	"time"
@@ -26,7 +27,7 @@ func GenerateJWT(c *gin.Context) {
 
 	// Lookup user
 	var user models.User
-	helpers.DB.First(&user, "email = ?", input.Email)
+	repository.DB.First(&user, "email = ?", input.Email)
 
 	if user.ID == uuid.Nil {
 		helpers.LogError.Printf("%s", "Email does not exist")

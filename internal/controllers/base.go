@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"reflect"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -9,23 +10,32 @@ import (
 
 type BaseController struct {
 	db    *gorm.DB
-	model any
+	model interface{}
 }
 
-func NewBaseController(db *gorm.DB, model any) *BaseController {
+func NewBaseController(db *gorm.DB, model interface{}) *BaseController {
 	return &BaseController{db, model}
 }
 
 func (ctrl *BaseController) GetAll(c *gin.Context) {
-	var records []interface{}
-	ctrl.db.Find(&records)
+	// use reflection to create a new slice of the correct type
+	sliceType := reflect.SliceOf(reflect.TypeOf(ctrl.model))
+	records := reflect.New(sliceType).Interface()
+
+	// pass a pointer to the slice to Find() method
+	ctrl.db.Find(records)
+
 	c.JSON(http.StatusOK, records)
 }
 
 func (ctrl *BaseController) Get(c *gin.Context) {
 	id := c.Param("id")
-	var record interface{}
-	if err := ctrl.db.First(&record, id).Error; err != nil {
+
+	// use reflection to create a new slice of the correct type
+	sliceType := reflect.SliceOf(reflect.TypeOf(ctrl.model))
+	record := reflect.New(sliceType).Interface()
+
+	if err := ctrl.db.First(record, "id = ?", id).Error; err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
@@ -38,7 +48,7 @@ func (ctrl *BaseController) Create(c *gin.Context) {
 		return
 	}
 	ctrl.db.Create(&ctrl.model)
-	c.JSON(http.StatusCreated, ctrl.model)
+	c.JSON(http.StatusCreated, &ctrl.model)
 }
 
 func (ctrl *BaseController) Update(c *gin.Context) {
@@ -52,7 +62,7 @@ func (ctrl *BaseController) Update(c *gin.Context) {
 		return
 	}
 	ctrl.db.Save(&ctrl.model)
-	c.JSON(http.StatusOK, ctrl.model)
+	c.JSON(http.StatusOK, &ctrl.model)
 }
 
 func (ctrl *BaseController) Delete(c *gin.Context) {

@@ -1,5 +1,8 @@
 # Shop Admin
 
+[![Language](https://img.shields.io/badge/language-go-green.svg)](https://github.com/sartim/gin_shop_api)
+![build](https://github.com/sartim/gin_shop_api/workflows/build/badge.svg)
+
 ### Setup
 
 ###### Make migrations

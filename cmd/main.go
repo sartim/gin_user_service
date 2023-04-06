@@ -72,6 +72,7 @@ func runServer() {
 
 func makeMigrations() {
 	if action == "create_tables" {
+		repository.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 		repository.DB.AutoMigrate(&models.User{})
 		repository.DB.AutoMigrate(&models.Status{})
 		fmt.Println("Finished running migrations")

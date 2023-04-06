@@ -4,23 +4,18 @@ import (
 	"fmt"
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/repository"
-	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func init() {
 	gin.ForceConsoleColor()
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Panicf("%s: %s", "Error loading env vars", err)
-	}
 	repository.ConnectToDb()
 }
 
 func Setup() {
+	repository.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 	repository.DB.AutoMigrate(&models.User{})
 	repository.DB.AutoMigrate(&models.Status{})
 	fmt.Println("Finished running migrations")

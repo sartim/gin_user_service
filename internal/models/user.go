@@ -14,3 +14,7 @@ type User struct {
 	IsActive  bool      `json:"is_active" gorm:"column:is_active;defult=false"`
 	Deleted   bool      `json:"deleted" gorm:"column:deleted;defult=false"`
 }
+
+func (User) TableName() string {
+	return "user"
+}

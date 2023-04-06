@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"gin-shop-api/internal/models"
 	"log"
 	"net/http"
 	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -18,13 +20,26 @@ type BaseController struct {
 	schema interface{}
 }
 
+type PaginationParams struct {
+	Page  int `form:"page,default=1"`
+	Limit int `form:"limit,default=100"`
+}
+
 func NewBaseController(db *gorm.DB, model interface{}, schema interface{}) *BaseController {
 	return &BaseController{db, model, schema}
 }
 
 func (ctrl *BaseController) GetAll(c *gin.Context) {
-	page := 1
-	limit := 100
+	var params PaginationParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	// check if page query parameter is provided and parse it
 	if pageParam := c.Query("page"); pageParam != "" {
@@ -35,7 +50,7 @@ func (ctrl *BaseController) GetAll(c *gin.Context) {
 			})
 			return
 		}
-		page = parsedPage
+		params.Page = parsedPage
 	}
 
 	// check if limit query parameter is provided and parse it
@@ -47,7 +62,7 @@ func (ctrl *BaseController) GetAll(c *gin.Context) {
 			})
 			return
 		}
-		limit = parsedLimit
+		params.Limit = parsedLimit
 	}
 
 	// use reflection to create a new slice of the correct type
@@ -55,10 +70,14 @@ func (ctrl *BaseController) GetAll(c *gin.Context) {
 	records := reflect.New(sliceType).Interface()
 
 	// calculate offset based on page and limit
-	offset := (page - 1) * limit
+	offset := (params.Page - 1) * params.Limit
+
+	// pass ctx to database queries
+	// use WithContext() method of gorm.DB to pass the context
+	ctrl.db = ctrl.db.WithContext(ctx)
 
 	// pass a pointer to the slice to Offset() and Limit() methods
-	ctrl.db.Offset(offset).Limit(limit).Find(records)
+	ctrl.db.Offset(offset).Limit(params.Limit).Find(records)
 
 	// check if records are empty and return 404 if true
 	if reflect.ValueOf(records).Elem().Len() == 0 {
@@ -114,11 +133,21 @@ func (ctrl *BaseController) Create(c *gin.Context) {
 		return
 	}
 
-	result := ctrl.db.Create(model)
+	tx := ctrl.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
 
-	if result.Error != nil {
-		panic(result.Error)
+	if err := tx.Create(model).Error; err != nil {
+		tx.Rollback()
+		panic(err)
 	}
+
+	tx.Commit()
+
 	c.JSON(http.StatusCreated, model)
 }
 

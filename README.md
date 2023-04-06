@@ -2,10 +2,6 @@
 
 ### Setup
 
-###### Enable uuid extension for postgres
-
-    $ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 ###### Make migrations
     $ go run ./cmd main.go --action=create_tables 
 

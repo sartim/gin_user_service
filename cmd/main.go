@@ -124,7 +124,7 @@ func StringPrompt(label string) string {
 }
 
 func main() {
-	flag.StringVar(&action, "action", "", "action e.g. run_server, make_migrations, drop_tables")
+	flag.StringVar(&action, "action", "", "action e.g. run_server, create_tables, drop_tables")
 	flag.Parse()
 	runServer()
 	makeMigrations()

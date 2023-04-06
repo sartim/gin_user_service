@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 	"reflect"
 
@@ -9,12 +10,13 @@ import (
 )
 
 type BaseController struct {
-	db    *gorm.DB
-	model interface{}
+	db     *gorm.DB
+	model  interface{}
+	schema interface{}
 }
 
-func NewBaseController(db *gorm.DB, model interface{}) *BaseController {
-	return &BaseController{db, model}
+func NewBaseController(db *gorm.DB, model interface{}, schema interface{}) *BaseController {
+	return &BaseController{db, model, schema}
 }
 
 func (ctrl *BaseController) GetAll(c *gin.Context) {
@@ -43,12 +45,20 @@ func (ctrl *BaseController) Get(c *gin.Context) {
 }
 
 func (ctrl *BaseController) Create(c *gin.Context) {
-	if err := c.ShouldBindJSON(&ctrl.model); err != nil {
+	model := reflect.New(reflect.TypeOf(ctrl.model)).Interface()
+
+	if err := c.ShouldBindJSON(&model); err != nil {
+		log.Printf("%s: %s", "Field validation failed", err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	ctrl.db.Create(&ctrl.model)
-	c.JSON(http.StatusCreated, &ctrl.model)
+
+	result := ctrl.db.Create(model)
+
+	if result.Error != nil {
+		panic(result.Error)
+	}
+	c.JSON(http.StatusCreated, model)
 }
 
 func (ctrl *BaseController) Update(c *gin.Context) {

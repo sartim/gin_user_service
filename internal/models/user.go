@@ -11,8 +11,8 @@ type User struct {
 	LastName  string    `json:"last_name" gorm:"column:last_name"`
 	Email     string    `json:"email" gorm:"column:email;index:idx_name,unique"`
 	Password  string    `json:"-" gorm:"column:password"`
-	IsActive  bool      `json:"is_active" gorm:"column:is_active;defult=false"`
-	Deleted   bool      `json:"deleted" gorm:"column:deleted;defult=false"`
+	IsActive  bool      `json:"is_active" gorm:"column:is_active;default=false"`
+	Deleted   bool      `json:"deleted" gorm:"column:deleted;default=false"`
 }
 
 func (User) TableName() string {

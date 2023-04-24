@@ -1,4 +1,6 @@
-# Shop Admin
+# User Service
+
+User service running on Gin Framework.
 
 [![Language](https://img.shields.io/badge/language-go-green.svg)](https://github.com/sartim/gin_shop_api)
 ![build](https://github.com/sartim/gin_shop_api/actions/workflows/master.yml/badge.svg)

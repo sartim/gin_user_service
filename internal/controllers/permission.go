@@ -46,7 +46,8 @@ func (ctrl *PermissionController) Create(c *gin.Context) {
 	c.JSON(200, gin.H{"permission": permission})
 }
 
-func (ctrl *PermissionController) RegisterPermissionRoutes(router *gin.RouterGroup) {
+func (ctrl *PermissionController) RegisterPermissionRoutes(
+	router *gin.RouterGroup) {
 	permissionRouter := router.Group("/permissions")
 	{
 		permissionRouter.GET("", ctrl.GetAll)

@@ -47,20 +47,21 @@ func RegisterRoutes(r *gin.Engine) {
 func runServer() {
 	if action == "run_server" {
 		r := gin.Default()
-		r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-			// your custom format
-			return fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
-				param.ClientIP,
-				param.TimeStamp.Format(time.RFC1123),
-				param.Method,
-				param.Path,
-				param.Request.Proto,
-				param.StatusCode,
-				param.Latency,
-				param.Request.UserAgent(),
-				param.ErrorMessage,
-			)
-		}))
+		r.Use(gin.LoggerWithFormatter(
+			func(param gin.LogFormatterParams) string {
+				// your custom format
+				return fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
+					param.ClientIP,
+					param.TimeStamp.Format(time.RFC1123),
+					param.Method,
+					param.Path,
+					param.Request.Proto,
+					param.StatusCode,
+					param.Latency,
+					param.Request.UserAgent(),
+					param.ErrorMessage,
+				)
+			}))
 		r.Use(gin.Recovery())
 		r.Use(middleware.CORSMiddleware())
 		healthCheckRoute(r)
@@ -70,19 +71,31 @@ func runServer() {
 	}
 }
 
+func createUserTable() {
+	err := repository.DB.AutoMigrate(&models.User{})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func dropUserTable() {
+	err := repository.DB.Migrator().DropTable(&models.User{})
+	if err != nil {
+		panic(err)
+	}
+}
+
 func makeMigrations() {
 	if action == "create_tables" {
 		repository.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
-		repository.DB.AutoMigrate(&models.User{})
-		repository.DB.AutoMigrate(&models.Status{})
+		createUserTable()
 		fmt.Println("Finished running migrations")
 	}
 }
 
 func dropTables() {
 	if action == "drop_tables" {
-		repository.DB.Migrator().DropTable(&models.User{})
-		repository.DB.Migrator().DropTable(&models.Status{})
+		dropUserTable()
 		fmt.Println("Finished dropping tables")
 	}
 }

@@ -25,7 +25,8 @@ type PaginationParams struct {
 	Limit int `form:"limit,default=100"`
 }
 
-func NewBaseController(db *gorm.DB, model interface{}, schema interface{}) *BaseController {
+func NewBaseController(
+	db *gorm.DB, model interface{}, schema interface{}) *BaseController {
 	return &BaseController{db, model, schema}
 }
 

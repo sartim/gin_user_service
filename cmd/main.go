@@ -45,7 +45,7 @@ func RegisterRoutes(r *gin.Engine) {
 }
 
 func runServer() {
-	if action == "run_server" {
+	if action == "run-server" {
 		r := gin.Default()
 		r.Use(gin.LoggerWithFormatter(
 			func(param gin.LogFormatterParams) string {
@@ -78,6 +78,13 @@ func createUserTable() {
 	}
 }
 
+func createRoleTable() {
+	err := repository.DB.AutoMigrate(&models.User{})
+	if err != nil {
+		panic(err)
+	}
+}
+
 func dropUserTable() {
 	err := repository.DB.Migrator().DropTable(&models.User{})
 	if err != nil {
@@ -86,31 +93,36 @@ func dropUserTable() {
 }
 
 func makeMigrations() {
-	if action == "create_tables" {
-		repository.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
-		createUserTable()
+	if action == "create-tables" {
+		createTables()
 		fmt.Println("Finished running migrations")
 	}
 }
 
+func createTables() {
+	repository.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
+	createUserTable()
+	createRoleTable()
+}
+
 func dropTables() {
-	if action == "drop_tables" {
+	if action == "drop-tables" {
 		dropUserTable()
 		fmt.Println("Finished dropping tables")
 	}
 }
 
 func createSuperUser() {
-	if action == "create_super_user" {
-		first_name := StringPrompt("first_name:")
-		last_name := StringPrompt("last_name")
-		email := StringPrompt("email")
-		password := StringPrompt("password")
+	if action == "create-super-user" {
+		firstName := StringPrompt("first_name:")
+		lastName := StringPrompt("last_name:")
+		email := StringPrompt("email:")
+		password := StringPrompt("password:")
 
 		user := models.User{
 			ID:        uuid.New(),
-			FirstName: first_name,
-			LastName:  last_name,
+			FirstName: firstName,
+			LastName:  lastName,
 			Email:     email,
 			Password:  helpers.HashPassword(password),
 			IsActive:  true,
@@ -138,7 +150,9 @@ func StringPrompt(label string) string {
 }
 
 func main() {
-	flag.StringVar(&action, "action", "", "action e.g. run_server, create_tables, drop_tables")
+	flag.StringVar(&action,
+		"action", "",
+		"action e.g. run-server, create-tables, drop-tables")
 	flag.Parse()
 	runServer()
 	makeMigrations()

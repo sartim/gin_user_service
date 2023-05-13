@@ -30,7 +30,7 @@ User service running on Gin Framework.
     $ go run main.go --action=run_server 
 
 
-### Install requirments
+### Install requirements
     $ go mod init gin-shop-api
     $ go mod tidy
     $ go get github.com/gin-gonic/gin

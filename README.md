@@ -2,20 +2,20 @@
 
 User service running on Gin Framework.
 
-[![Language](https://img.shields.io/badge/language-go-green.svg)](https://github.com/sartim/gin_shop_api)
-![build](https://github.com/sartim/gin_shop_api/actions/workflows/master.yml/badge.svg)
+[![Language](https://img.shields.io/badge/language-go-blue.svg)](https://go.dev)
+[![Build Status](https://github.com/sartim/gin_user_service/workflows/build/badge.svg)](https://github.com/sartim/gin_user_service/actions/workflows/master.yml)
 
 ### Setup
 
 ###### Make migrations
-    $ go run ./cmd main.go --action=create_tables 
+    $ go run ./cmd main.go --action=create-tables 
 
 ###### Drop tables
-    $ go run ./cmd main.go --action=drop_tables 
+    $ go run ./cmd main.go --action=drop-tables 
 
 ###### Create super user
 
-    $ go run ./cmd main.go --action=create_super_user 
+    $ go run ./cmd main.go --action=create-super_user 
 
 ###### Running unittests
 
@@ -27,7 +27,7 @@ User service running on Gin Framework.
     $ go tool cover -html=coverage.out
 
 ###### Run server
-    $ go run main.go --action=run_server 
+    $ go run main.go --action=run-server 
 
 
 ### Install requirements

@@ -48,7 +48,6 @@ jobs:
         sudo mkdir user-service-bundle
         sudo cp user-service user-service-bundle
         sudo cp -r aws-codedeploy-helpers user-service-bundle
-        sudo cp -r templates user-service-bundle
         cd user-service-bundle && sudo zip -r user-service-bundle-prod.zip .
       env:
         ENV: ${{ secrets.ENV }}

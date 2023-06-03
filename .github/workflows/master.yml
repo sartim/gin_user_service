@@ -1,4 +1,4 @@
-name: Master branch pipeline
+name: build
 
 on:
   push:
@@ -6,7 +6,6 @@ on:
 
 jobs:
   test:
-    name: Master branch pipeline
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -31,3 +30,51 @@ jobs:
         DB_URL: ${{ secrets.DB_URL }}
     - name: Run coverage
       run: go test -v ./tests -coverprofile=coverage.out
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      max-parallel: 1
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.19
+    - name: Build
+      run: go build -o user-service ./cmd/main.go
+    - name: Compress binary
+      run: |
+        sudo mkdir user-service-bundle
+        sudo cp user-service user-service-bundle
+        sudo cp -r aws-codedeploy-helpers user-service-bundle
+        sudo cp -r templates user-service-bundle
+        cd user-service-bundle && sudo zip -r user-service-bundle-prod.zip .
+      env:
+        ENV: ${{ secrets.ENV }}
+    - name: Upload compressed binary to S3
+      run: echo "Upload compressed binary to S3"
+      # run: |
+      #   aws s3 cp user-service-bundle/user-service-bundle-prod.zip ${{ secrets.SMS_GATEWAY_S3_URI }}/user-service-bundle-prod.zip \
+      #   --region ${{ secrets.AWS_REGION }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      max-parallel: 1
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup CI/CD Server
+      run: |
+        sudo apt-get update &&
+        sudo apt-get install -y redis-server &&
+        sudo apt-get install -y awscli
+    - name: Deploy to prod
+      run: echo "Deploy to prod"
+      # run: aws deploy create-deployment --region ${{ secrets.AWS_REGION }} --application-name user-service --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name user-service-server-2-dg --description "Github deployment for commit ${GITHUB_SHA}" --s3-location bucket=eneza-user-service,key=user-service-bundle-prod.zip,bundleType=zip
+      # env:
+      #   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

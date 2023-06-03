@@ -17,19 +17,19 @@ func init() {
 func Setup() {
 	repository.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 	repository.DB.AutoMigrate(&models.User{})
-	repository.DB.AutoMigrate(&models.Role{})
-	repository.DB.AutoMigrate(&models.Permission{})
-	repository.DB.AutoMigrate(&models.RolePermission{})
-	repository.DB.AutoMigrate(&models.UserPermission{})
+	// repository.DB.AutoMigrate(&models.Role{})
+	// repository.DB.AutoMigrate(&models.Permission{})
+	// repository.DB.AutoMigrate(&models.RolePermission{})
+	// repository.DB.AutoMigrate(&models.UserPermission{})
 	fmt.Println("Finished running migrations")
 }
 
 func TearDown() {
 	repository.DB.Migrator().DropTable(&models.User{})
 	repository.DB.AutoMigrate(&models.Role{})
-	repository.DB.AutoMigrate(&models.Permission{})
-	repository.DB.AutoMigrate(&models.RolePermission{})
-	repository.DB.AutoMigrate(&models.UserPermission{})
+	// repository.DB.AutoMigrate(&models.Permission{})
+	// repository.DB.AutoMigrate(&models.RolePermission{})
+	// repository.DB.AutoMigrate(&models.UserPermission{})
 	fmt.Println("Finished dropping tables")
 }
 

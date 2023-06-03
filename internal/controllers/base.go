@@ -82,7 +82,7 @@ func (ctrl *BaseController) GetAll(c *gin.Context) {
 
 	// check if records are empty and return 404 if true
 	if reflect.ValueOf(records).Elem().Len() == 0 {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{
 			"message": "No results",
 		})
 		return

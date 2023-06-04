@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"gin-shop-api/internal/helpers"
+	"gin-shop-api/internal/helpers/validation"
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/schemas"
 	"log"
@@ -25,7 +25,7 @@ func (ctrl *PermissionController) Create(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Printf("%s: %s", "Field validation failed", err)
-		helpers.ValidateSchema(c, err, "body")
+		validation.ValidateSchema(c, err, "body")
 		return
 	}
 

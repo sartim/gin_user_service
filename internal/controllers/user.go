@@ -1,7 +1,8 @@
 package controllers
 
 import (
-	"gin-shop-api/internal/helpers"
+	"gin-shop-api/internal/helpers/crypto"
+	"gin-shop-api/internal/helpers/validation"
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/schemas"
 	"log"
@@ -25,7 +26,7 @@ func (ctrl *UserController) Create(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Printf("%s: %s", "Field validation failed", err)
-		helpers.ValidateSchema(c, err, "body")
+		validation.ValidateSchema(c, err, "body")
 		return
 	}
 
@@ -34,7 +35,7 @@ func (ctrl *UserController) Create(c *gin.Context) {
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,
-		Password:  helpers.HashPassword(input.Password),
+		Password:  crypto.HashPassword(input.Password),
 		IsActive:  false,
 	}
 

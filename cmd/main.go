@@ -4,11 +4,15 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"gin-shop-api/internal/config"
 	"gin-shop-api/internal/controllers"
-	"gin-shop-api/internal/helpers"
+	"gin-shop-api/internal/helpers/crypto"
+	"gin-shop-api/internal/helpers/env"
 	"gin-shop-api/internal/middleware"
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/repository"
+	"html/template"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -19,9 +23,43 @@ import (
 
 var action string
 
+type Action struct {
+	Env             string
+	RunServer       string
+	CreateTables    string
+	DropTables      string
+	CreateSuperUser string
+	SetupService    string
+}
+
+var actions = Action{
+	Env:             "env",
+	RunServer:       "run-server",
+	CreateTables:    "create-tables",
+	DropTables:      "drop-tables",
+	CreateSuperUser: "create-super-user",
+	SetupService:    "setup-service",
+}
+
+type EnvVars struct {
+	ENV    string
+	PORT   string
+	DB_URL string
+}
+
 func init() {
 	gin.ForceConsoleColor()
-	helpers.LoadEnvVariables()
+
+	// Override logging
+	log.SetPrefix("\u001b[31mERROR: \u001b[0m")
+	log.SetFlags(log.LstdFlags | log.Ldate | log.Lmicroseconds | log.Llongfile)
+
+	// Load environment variables
+	// Check if .env file exists
+	if _, err := os.Stat(".env"); err == nil {
+		env.LoadEnvVars()
+	}
+
 	repository.ConnectToDb()
 }
 
@@ -113,27 +151,29 @@ func dropTables() {
 }
 
 func createSuperUser() {
-	if action == "create-super-user" {
-		firstName := StringPrompt("first_name:")
-		lastName := StringPrompt("last_name:")
-		email := StringPrompt("email:")
-		password := StringPrompt("password:")
+	firstName := StringPrompt("first_name:")
+	lastName := StringPrompt("last_name:")
+	email := StringPrompt("email:")
+	password := StringPrompt("password:")
 
-		user := models.User{
-			ID:        uuid.New(),
-			FirstName: firstName,
-			LastName:  lastName,
-			Email:     email,
-			Password:  helpers.HashPassword(password),
-			IsActive:  true,
-		}
-		result := repository.DB.Create(&user)
-
-		if result.Error != nil {
-			panic(result.Error)
-		}
-		fmt.Println("Finished creating super user record")
+	user := models.User{
+		ID:        uuid.New(),
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+		Password:  crypto.HashPassword(password),
+		IsActive:  true,
 	}
+	result := repository.DB.Create(&user)
+
+	if result.Error != nil {
+		panic(result.Error)
+	}
+	fmt.Println("Finished creating super user record")
+}
+
+func SetupService() {
+	// TODO setup service
 }
 
 func StringPrompt(label string) string {
@@ -149,13 +189,68 @@ func StringPrompt(label string) string {
 	return strings.TrimSpace(s)
 }
 
+func setupEnvVars() {
+	envConfig := config.Config{EnvVar: config.Environment}
+	env := envConfig.Get()
+
+	portConfig := config.Config{EnvVar: config.Port}
+	port := portConfig.Get()
+
+	dbUrlConfig := config.Config{EnvVar: config.DbUrl}
+	dbUrl := dbUrlConfig.Get()
+
+	service := EnvVars{
+		ENV:    env,
+		PORT:   port,
+		DB_URL: dbUrl,
+	}
+	// Scaffold from template
+	tmpl, err := template.ParseFiles(
+		fmt.Sprintf("%s/templates/.env", config.CurrDir()))
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// Path to env file name
+	envFileName := fmt.Sprint(".env")
+	path := fmt.Sprintf("%s/%s", config.CurrDir(), envFileName)
+
+	// Generate file to systemd path
+	outputFile, err := os.Create(path)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer outputFile.Close()
+
+	err = tmpl.Execute(outputFile, service)
+	if err != nil {
+		log.Panic(err)
+	}
+}
+
+func launchAction() {
+	switch action {
+	case actions.Env:
+		setupEnvVars()
+	case actions.RunServer:
+		runServer()
+	case actions.DropTables:
+		dropTables()
+	case actions.DropTables:
+		createTables()
+	case actions.DropTables:
+		dropTables()
+	case actions.DropTables:
+		createSuperUser()
+	}
+}
+
 func main() {
 	flag.StringVar(&action,
 		"action", "",
-		"action e.g. run-server, create-tables, drop-tables")
+		"action e.g. run-server, create-tables, drop-tables, create-super-user, setup-workers")
 	flag.Parse()
-	runServer()
-	makeMigrations()
-	dropTables()
-	createSuperUser()
+	if action != "" {
+		launchAction()
+	}
 }

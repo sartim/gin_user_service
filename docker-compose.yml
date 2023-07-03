@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      ENV: PROD
+    command: /app/build/user-service --action=run-server
+
+  web:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app

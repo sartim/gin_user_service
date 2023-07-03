@@ -24,6 +24,7 @@ RUN export GOROOT=$HOME/go
 RUN export PATH=$PATH:$GOROOT/bin
 RUN /go/bin/go mod init gin-shop-api
 RUN /go/bin/go mod tidy
+
 # Build the app to binary
 RUN mkdir build && /go/bin/go build -o ./build/user-service ./cmd/main.go   
 

@@ -145,10 +145,8 @@ func createTables() {
 }
 
 func dropTables() {
-	if action == "drop-tables" {
-		dropUserTable()
-		fmt.Println("Finished dropping tables")
-	}
+	dropUserTable()
+	fmt.Println("Finished dropping tables")
 }
 
 func createSuperUser() {

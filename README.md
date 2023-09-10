@@ -32,7 +32,6 @@ User service running on Gin Framework.
 
 ### Install requirements
     $ go mod init gin-shop-api
-    $ go mod tidy
     $ go get github.com/gin-gonic/gin
     $ go get gorm.io/gorm
     $ go get gorm.io/driver/postgres

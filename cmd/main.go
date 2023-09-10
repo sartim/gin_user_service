@@ -117,7 +117,14 @@ func createUserTable() {
 }
 
 func createRoleTable() {
-	err := repository.DB.AutoMigrate(&models.User{})
+	err := repository.DB.AutoMigrate(&models.Role{})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func createUserPermissionTable() {
+	err := repository.DB.AutoMigrate(&models.UserPermission{})
 	if err != nil {
 		panic(err)
 	}
@@ -141,6 +148,7 @@ func createTables() {
 	repository.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 	createUserTable()
 	createRoleTable()
+	createUserPermissionTable()
 }
 
 func dropTables() {
@@ -236,11 +244,11 @@ func launchAction() {
 		runServer()
 	case actions.DropTables:
 		dropTables()
-	case actions.DropTables:
+	case actions.CreateTables:
 		createTables()
 	case actions.DropTables:
 		dropTables()
-	case actions.DropTables:
+	case actions.CreateSuperUser:
 		createSuperUser()
 	}
 }
@@ -248,7 +256,7 @@ func launchAction() {
 func main() {
 	flag.StringVar(&action,
 		"action", "",
-		"action e.g. run-server, create-tables, drop-tables, create-super-user, setup-workers")
+		"action e.g. run-server, create-tables, drop-tables, create-super-user")
 	flag.Parse()
 	if action != "" {
 		launchAction()

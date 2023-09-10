@@ -23,6 +23,6 @@ func ConnectToDb() {
 	fmt.Println(DB)
 
 	if err != nil {
-		log.Printf("%s: %s", "Failed to connect to the datbase", err)
+		log.Printf("%s: %s", "Failed to connect to the database", err)
 	}
 }

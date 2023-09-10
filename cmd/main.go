@@ -137,13 +137,6 @@ func dropUserTable() {
 	}
 }
 
-func makeMigrations() {
-	if action == "create-tables" {
-		createTables()
-		fmt.Println("Finished running migrations")
-	}
-}
-
 func createTables() {
 	repository.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 	createUserTable()

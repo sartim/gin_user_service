@@ -8,6 +8,7 @@ import (
 const Environment = "ENV"
 const Port = "PORT"
 const DbUrl = "DB_URL"
+const SecretKey = "SECRET_KEY"
 
 func DatabaseConfig() string {
 	return os.Getenv("DB_URL")

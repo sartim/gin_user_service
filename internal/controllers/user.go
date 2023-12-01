@@ -3,6 +3,7 @@ package controllers
 import (
 	"gin-shop-api/internal/helpers/crypto"
 	"gin-shop-api/internal/helpers/validation"
+	"gin-shop-api/internal/middleware"
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/schemas"
 	"log"
@@ -51,6 +52,7 @@ func (ctrl *UserController) Create(c *gin.Context) {
 }
 
 func (ctrl *UserController) RegisterUserRoutes(router *gin.RouterGroup) {
+	router.Use(middleware.RequireAuth())
 	userRouter := router.Group("/users")
 	{
 		userRouter.GET("", ctrl.GetAll)

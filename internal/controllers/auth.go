@@ -69,8 +69,8 @@ func GenerateJWT(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"token": tokenString,
-		"user":  &user,
+		"access": tokenString,
+		"user":   &user,
 	})
 }
 

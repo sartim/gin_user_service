@@ -25,9 +25,10 @@ jobs:
     - name: Test
       run: go test -v ./tests
       env:
-        PORT: ${{ secrets.PORT }}
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        ENV: ${{ secrets.ENV }}
         DB_URL: ${{ secrets.DB_URL }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        PORT: ${{ secrets.PORT }}
     - name: Run coverage
       run: go test -v ./tests -coverprofile=coverage.out
   build:
@@ -54,6 +55,9 @@ jobs:
         cd user-service-bundle && sudo zip -r user-service-bundle-prod.zip .
       env:
         ENV: ${{ secrets.ENV }}
+        DB_URL: ${{ secrets.DB_URL }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        PORT: ${{ secrets.PORT }}
     - name: Upload compressed binary to S3
       run: echo "Upload compressed binary to S3"
       # run: |

@@ -42,9 +42,10 @@ var actions = Action{
 }
 
 type EnvVars struct {
-	ENV    string
-	PORT   string
-	DB_URL string
+	ENV        string
+	PORT       string
+	DB_URL     string
+	SECRET_KEY string
 }
 
 func init() {
@@ -198,10 +199,14 @@ func setupEnvVars() {
 	dbUrlConfig := config.Config{EnvVar: config.DbUrl}
 	dbUrl := dbUrlConfig.Get()
 
+	secretKeyConfig := config.Config{EnvVar: config.SecretKey}
+	secretKey := secretKeyConfig.Get()
+
 	service := EnvVars{
-		ENV:    env,
-		PORT:   port,
-		DB_URL: dbUrl,
+		ENV:        env,
+		PORT:       port,
+		DB_URL:     dbUrl,
+		SECRET_KEY: secretKey,
 	}
 	// Scaffold from template
 	tmpl, err := template.ParseFiles(
@@ -247,7 +252,7 @@ func launchAction() {
 func main() {
 	flag.StringVar(&action,
 		"action", "",
-		"action e.g. run-server, create-tables, drop-tables, create-super-user")
+		"action e.g. run-server, create-tables, drop-tables, create-super-user, env")
 	flag.Parse()
 	if action != "" {
 		launchAction()

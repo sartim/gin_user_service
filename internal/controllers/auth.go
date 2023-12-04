@@ -22,8 +22,14 @@ func GenerateJWT(c *gin.Context) {
 	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Printf("%s: %s", "Field validation failed", err)
-		validation.ValidateSchema(c, err, "body")
-		return
+		errors := validation.ValidateSchema(err, "body")
+		if errors != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing json body"})
+			return
+		}
 	}
 
 	// Lookup user

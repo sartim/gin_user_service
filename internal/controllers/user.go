@@ -7,6 +7,7 @@ import (
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/schemas"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -27,8 +28,14 @@ func (ctrl *UserController) Create(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Printf("%s: %s", "Field validation failed", err)
-		validation.ValidateSchema(c, err, "body")
-		return
+		errors := validation.ValidateSchema(err, "body")
+		if errors != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing json body"})
+			return
+		}
 	}
 
 	// Set the hashed password in the user model

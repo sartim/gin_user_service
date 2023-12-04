@@ -5,6 +5,7 @@ import (
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/schemas"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -25,8 +26,8 @@ func (ctrl *PermissionController) Create(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Printf("%s: %s", "Field validation failed", err)
-		validation.ValidateSchema(c, err, "body")
-		return
+		errors := validation.ValidateSchema(err, "body")
+		c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
 	}
 
 	// Set the hashed password in the permission model

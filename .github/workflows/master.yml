@@ -36,6 +36,20 @@ jobs:
     needs: test
     strategy:
       max-parallel: 1
+    env:
+      ENV: ${{ secrets.ENV }}
+      DB_URL: ${{ secrets.DB_URL }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      PORT: ${{ secrets.PORT }}
+    services:
+      postgres:
+        image: postgres:10.8
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+        - 5432:5432
     steps:
     - uses: actions/checkout@v3
     - name: Set up Go
@@ -53,11 +67,6 @@ jobs:
         go run ./cmd/main.go --action=env 
         sudo cp .env user-service-bundle
         cd user-service-bundle && sudo zip -r user-service-bundle-prod.zip .
-      env:
-        ENV: ${{ secrets.ENV }}
-        DB_URL: ${{ secrets.DB_URL }}
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        PORT: ${{ secrets.PORT }}
     - name: Upload compressed binary to S3
       run: echo "Upload compressed binary to S3"
       # run: |

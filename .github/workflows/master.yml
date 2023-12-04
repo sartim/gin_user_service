@@ -7,6 +7,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      ENV: ${{ secrets.ENV }}
+      DB_URL: ${{ secrets.DB_URL }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      PORT: ${{ secrets.PORT }}
     services:
       postgres:
         image: postgres:10.8
@@ -24,11 +29,6 @@ jobs:
         go-version: 1.19
     - name: Test
       run: go test -v ./tests
-      env:
-        ENV: ${{ secrets.ENV }}
-        DB_URL: ${{ secrets.DB_URL }}
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        PORT: ${{ secrets.PORT }}
     - name: Run coverage
       run: go test -v ./tests -coverprofile=coverage.out
   build:

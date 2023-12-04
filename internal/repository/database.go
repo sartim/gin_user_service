@@ -1,9 +1,7 @@
 package repository
 
 import (
-	"fmt"
 	"gin-shop-api/internal/config"
-	"log"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,9 +18,8 @@ func ConnectToDb() {
 			SingularTable: true,
 		},
 	})
-	fmt.Println(DB)
 
 	if err != nil {
-		log.Printf("%s: %s", "Failed to connect to the database", err)
+		panic(err)
 	}
 }

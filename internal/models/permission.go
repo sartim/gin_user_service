@@ -1,12 +1,9 @@
 package models
 
-import (
-	"github.com/google/uuid"
-	"gorm.io/gorm"
-)
+import "github.com/google/uuid"
 
 type Permission struct {
-	gorm.Model
+	Model
 	ID          uuid.UUID `json:"id" gorm:"column:id;primary_key;type:uuid;default:uuid_generate_v4()"`
 	Name        string    `json:"name" gorm:"index:idx_name,unique"`
 	Description string    `json:"description"`

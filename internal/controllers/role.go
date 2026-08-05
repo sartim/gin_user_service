@@ -12,13 +12,13 @@ import (
 )
 
 type RoleController struct {
-	*BaseController
+	*BaseController[models.Role]
 }
 
 func NewRoleController(db *gorm.DB) *RoleController {
-	var role models.Role
-	var schema schemas.RoleSchema
-	return &RoleController{NewBaseController(db, role, schema)}
+	return &RoleController{NewBaseController[models.Role](db, map[string]string{
+		"name": "name", "description": "description",
+	})}
 }
 
 func (ctrl *RoleController) Create(c *gin.Context) {
@@ -28,6 +28,7 @@ func (ctrl *RoleController) Create(c *gin.Context) {
 		log.Printf("%s: %s", "Field validation failed", err)
 		errors := validation.ValidateSchema(err, "body")
 		c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
+		return
 	}
 
 	// Set the hashed password in the role model
@@ -40,11 +41,11 @@ func (ctrl *RoleController) Create(c *gin.Context) {
 	result := ctrl.db.Create(&role)
 
 	if result.Error != nil {
-		c.AbortWithStatusJSON(500, gin.H{"error": result.Error.Error()})
+		handleWriteError(c, result.Error)
 		return
 	}
 
-	c.JSON(200, gin.H{"role": role})
+	c.JSON(http.StatusCreated, gin.H{"data": role})
 }
 
 func (ctrl *RoleController) RegisterRoleRoutes(
@@ -52,9 +53,9 @@ func (ctrl *RoleController) RegisterRoleRoutes(
 	roleRouter := router.Group("/roles")
 	{
 		roleRouter.GET("", ctrl.GetAll)
-		roleRouter.GET(":id", ctrl.Get)
+		roleRouter.GET("/:id", ctrl.Get)
 		roleRouter.POST("", ctrl.Create)
-		roleRouter.PUT(":id", ctrl.Update)
-		roleRouter.DELETE(":id", ctrl.Delete)
+		roleRouter.PATCH("/:id", ctrl.Update)
+		roleRouter.DELETE("/:id", ctrl.Delete)
 	}
 }

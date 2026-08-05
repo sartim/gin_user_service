@@ -2,259 +2,200 @@ package main
 
 import (
 	"bufio"
+	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
+
 	"gin-shop-api/internal/config"
 	"gin-shop-api/internal/controllers"
 	"gin-shop-api/internal/helpers/crypto"
-	"gin-shop-api/internal/helpers/env"
 	"gin-shop-api/internal/middleware"
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/repository"
-	"html/template"
-	"log"
-	"os"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 )
 
-var action string
+const (
+	actionRunServer       = "run-server"
+	actionMigrate         = "migrate"
+	actionDropTables      = "drop-tables"
+	actionCreateSuperUser = "create-super-user"
+)
 
-type Action struct {
-	Env             string
-	RunServer       string
-	CreateTables    string
-	DropTables      string
-	CreateSuperUser string
-	SetupService    string
-}
+func main() {
+	action := flag.String("action", actionRunServer, "run-server, migrate, drop-tables, or create-super-user")
+	flag.Parse()
 
-var actions = Action{
-	Env:             "env",
-	RunServer:       "run-server",
-	CreateTables:    "create-tables",
-	DropTables:      "drop-tables",
-	CreateSuperUser: "create-super-user",
-	SetupService:    "setup-service",
-}
-
-type EnvVars struct {
-	ENV        string
-	PORT       string
-	DB_URL     string
-	SECRET_KEY string
-}
-
-func init() {
-	gin.ForceConsoleColor()
-
-	// Override logging
-	log.SetPrefix("\u001b[31mERROR: \u001b[0m")
-	log.SetFlags(log.LstdFlags | log.Ldate | log.Lmicroseconds | log.Llongfile)
-
-	// Load environment variables
-	// Check if .env file exists
 	if _, err := os.Stat(".env"); err == nil {
-		env.LoadEnvVars()
+		if err := godotenv.Load(); err != nil {
+			log.Fatalf("load .env: %v", err)
+		}
 	}
 
-	repository.ConnectToDb()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("invalid configuration: %v", err)
+	}
+	db, err := repository.Open(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("database connection failed: %v", err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("database pool unavailable: %v", err)
+	}
+	defer sqlDB.Close()
+
+	switch *action {
+	case actionRunServer:
+		err = runServer(db, cfg)
+	case actionMigrate:
+		err = migrate(db)
+	case actionDropTables:
+		err = dropTables(db)
+	case actionCreateSuperUser:
+		err = createSuperUser(db)
+	default:
+		err = fmt.Errorf("unknown action %q", *action)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func healthCheckRoute(r *gin.Engine) {
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status": "ok",
-		})
+func newRouter(db *gorm.DB, cfg config.App) *gin.Engine {
+	if cfg.Environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+	router := gin.New()
+	router.Use(gin.Logger(), gin.Recovery(), middleware.CORS(cfg.AllowedOrigins))
+
+	router.GET("/health/live", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+	router.GET("/health/ready", func(c *gin.Context) {
+		sqlDB, err := db.DB()
+		if err != nil || sqlDB.PingContext(c.Request.Context()) != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unavailable"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ready"})
+	})
+
+	api := router.Group("/api/v1")
+	authController := controllers.NewAuthController(db, cfg.SecretKey, cfg.AccessTokenTTL)
+	authController.RegisterRoutes(api)
+
+	protected := api.Group("")
+	protected.Use(middleware.RequireAuth(db, cfg.SecretKey))
+	admin := protected.Group("")
+	admin.Use(middleware.RequireAdmin())
+	controllers.NewUserController(db).RegisterRoutes(admin)
+	controllers.NewRoleController(db).RegisterRoleRoutes(admin)
+	controllers.NewPermissionController(db).RegisterPermissionRoutes(admin)
+
+	return router
 }
 
-func RegisterRoutes(r *gin.Engine) {
-	APIVersion := "/api/v1"
+func runServer(db *gorm.DB, cfg config.App) error {
+	server := &http.Server{
+		Addr:              ":" + cfg.Port,
+		Handler:           newRouter(db, cfg),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 
-	// Auth API
-	controllers.RegisterAuthRoutes(r.Group(APIVersion))
+	shutdownSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	// User API
-	userCtrl := controllers.NewUserController(repository.DB)
-	userCtrl.RegisterUserRoutes(r.Group(APIVersion))
-}
+	serverErrors := make(chan error, 1)
+	go func() {
+		log.Printf("user service listening on %s", server.Addr)
+		serverErrors <- server.ListenAndServe()
+	}()
 
-func runServer() {
-	if action == "run-server" {
-		r := gin.Default()
-		r.Use(gin.LoggerWithFormatter(
-			func(param gin.LogFormatterParams) string {
-				// your custom format
-				return fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
-					param.ClientIP,
-					param.TimeStamp.Format(time.RFC1123),
-					param.Method,
-					param.Path,
-					param.Request.Proto,
-					param.StatusCode,
-					param.Latency,
-					param.Request.UserAgent(),
-					param.ErrorMessage,
-				)
-			}))
-		r.Use(gin.Recovery())
-		r.Use(middleware.CORSMiddleware())
-		healthCheckRoute(r)
-		RegisterRoutes(r)
-
-		r.Run()
+	select {
+	case err := <-serverErrors:
+		if !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("serve HTTP: %w", err)
+		}
+		return nil
+	case <-shutdownSignal.Done():
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		return server.Shutdown(ctx)
 	}
 }
 
-func createUserTable() {
-	err := repository.DB.AutoMigrate(&models.User{})
+func migrate(db *gorm.DB) error {
+	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; err != nil {
+		return fmt.Errorf("create UUID extension: %w", err)
+	}
+	if err := db.AutoMigrate(
+		&models.User{}, &models.Role{}, &models.Permission{},
+		&models.UserPermission{}, &models.RolePermission{},
+	); err != nil {
+		return fmt.Errorf("migrate schema: %w", err)
+	}
+	return nil
+}
+
+func dropTables(db *gorm.DB) error {
+	return db.Migrator().DropTable(
+		&models.RolePermission{}, &models.UserPermission{},
+		&models.Permission{}, &models.Role{}, &models.User{},
+	)
+}
+
+func createSuperUser(db *gorm.DB) error {
+	firstName := prompt("first_name:")
+	lastName := prompt("last_name:")
+	email := strings.ToLower(prompt("email:"))
+	password := prompt("password:")
+	hashedPassword, err := crypto.HashPassword(password)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("hash password: %w", err)
 	}
-}
-
-func createRoleTable() {
-	err := repository.DB.AutoMigrate(&models.Role{})
-	if err != nil {
-		panic(err)
-	}
-}
-
-func createUserPermissionTable() {
-	err := repository.DB.AutoMigrate(&models.UserPermission{})
-	if err != nil {
-		panic(err)
-	}
-}
-
-func dropUserTable() {
-	err := repository.DB.Migrator().DropTable(&models.User{})
-	if err != nil {
-		panic(err)
-	}
-}
-
-func createTables() {
-	repository.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
-	createUserTable()
-	createRoleTable()
-	createUserPermissionTable()
-}
-
-func dropTables() {
-	dropUserTable()
-	fmt.Println("Finished dropping tables")
-}
-
-func createSuperUser() {
-	firstName := StringPrompt("first_name:")
-	lastName := StringPrompt("last_name:")
-	email := StringPrompt("email:")
-	password := StringPrompt("password:")
-
 	user := models.User{
 		ID:        uuid.New(),
 		FirstName: firstName,
 		LastName:  lastName,
 		Email:     email,
-		Password:  crypto.HashPassword(password),
+		Password:  hashedPassword,
 		IsActive:  true,
+		IsAdmin:   true,
 	}
-	result := repository.DB.Create(&user)
-
-	if result.Error != nil {
-		panic(result.Error)
+	if err := db.Create(&user).Error; err != nil {
+		return fmt.Errorf("create super user: %w", err)
 	}
-	fmt.Println("Finished creating super user record")
+	log.Printf("created super user %s", user.Email)
+	return nil
 }
 
-func SetupService() {
-	// TODO setup service
-}
-
-func StringPrompt(label string) string {
-	var s string
-	r := bufio.NewReader(os.Stdin)
+func prompt(label string) string {
+	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Fprint(os.Stderr, label+" ")
-		s, _ = r.ReadString('\n')
-		if s != "" {
-			break
+		value, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatalf("read input: %v", err)
 		}
-	}
-	return strings.TrimSpace(s)
-}
-
-func setupEnvVars() {
-	envConfig := config.Config{EnvVar: config.Environment}
-	env := envConfig.Get()
-
-	portConfig := config.Config{EnvVar: config.Port}
-	port := portConfig.Get()
-
-	dbUrlConfig := config.Config{EnvVar: config.DbUrl}
-	dbUrl := dbUrlConfig.Get()
-
-	secretKeyConfig := config.Config{EnvVar: config.SecretKey}
-	secretKey := secretKeyConfig.Get()
-
-	service := EnvVars{
-		ENV:        env,
-		PORT:       port,
-		DB_URL:     dbUrl,
-		SECRET_KEY: secretKey,
-	}
-	// Scaffold from template
-	tmpl, err := template.ParseFiles(
-		fmt.Sprintf("%s/templates/.env", config.CurrDir()))
-	if err != nil {
-		log.Panic(err)
-	}
-
-	// Path to env file name
-	envFileName := fmt.Sprint(".env")
-	path := fmt.Sprintf("%s/%s", config.CurrDir(), envFileName)
-
-	// Generate file to systemd path
-	outputFile, err := os.Create(path)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer outputFile.Close()
-
-	err = tmpl.Execute(outputFile, service)
-	if err != nil {
-		log.Panic(err)
-	}
-}
-
-func launchAction() {
-	switch action {
-	case actions.Env:
-		setupEnvVars()
-	case actions.RunServer:
-		runServer()
-	case actions.DropTables:
-		dropTables()
-	case actions.CreateTables:
-		createTables()
-	case actions.DropTables:
-		dropTables()
-	case actions.CreateSuperUser:
-		createSuperUser()
-	}
-}
-
-func main() {
-	flag.StringVar(&action,
-		"action", "",
-		"action e.g. run-server, create-tables, drop-tables, create-super-user, env")
-	flag.Parse()
-	if action != "" {
-		launchAction()
+		if value = strings.TrimSpace(value); value != "" {
+			return value
+		}
 	}
 }

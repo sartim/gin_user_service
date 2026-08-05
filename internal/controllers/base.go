@@ -2,179 +2,143 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"gin-shop-api/internal/models"
-	"log"
+	"errors"
 	"net/http"
-	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 )
 
-type BaseController struct {
-	db     *gorm.DB
-	model  interface{}
-	schema interface{}
+const (
+	defaultPageSize = 20
+	maxPageSize     = 100
+)
+
+type BaseController[T any] struct {
+	db           *gorm.DB
+	updateFields map[string]string
 }
 
-type PaginationParams struct {
-	Page  int `form:"page,default=1"`
-	Limit int `form:"limit,default=100"`
+func NewBaseController[T any](db *gorm.DB, updateFields map[string]string) *BaseController[T] {
+	return &BaseController[T]{db: db, updateFields: updateFields}
 }
 
-func NewBaseController(
-	db *gorm.DB, model interface{}, schema interface{}) *BaseController {
-	return &BaseController{db, model, schema}
-}
-
-func (ctrl *BaseController) GetAll(c *gin.Context) {
-	var params PaginationParams
-	if err := c.ShouldBindQuery(&params); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+func (ctrl *BaseController[T]) GetAll(c *gin.Context) {
+	page, ok := positiveQueryInt(c, "page", 1, 0)
+	if !ok {
+		return
+	}
+	limit, ok := positiveQueryInt(c, "limit", defaultPageSize, maxPageSize)
+	if !ok {
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
+	db := ctrl.db.WithContext(ctx)
 
-	// check if page query parameter is provided and parse it
-	if pageParam := c.Query("page"); pageParam != "" {
-		parsedPage, err := strconv.Atoi(pageParam)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid page parameter",
-			})
+	var total int64
+	if err := db.Model(new(T)).Count(&total).Error; err != nil {
+		internalError(c)
+		return
+	}
+
+	records := make([]T, 0)
+	if err := db.Offset((page - 1) * limit).Limit(limit).Find(&records).Error; err != nil {
+		internalError(c)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":       records,
+		"pagination": gin.H{"page": page, "limit": limit, "total": total},
+	})
+}
+
+func (ctrl *BaseController[T]) Get(c *gin.Context) {
+	var record T
+	err := ctrl.db.WithContext(c.Request.Context()).First(&record, "id = ?", c.Param("id")).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "resource not found"})
+		return
+	}
+	if err != nil {
+		internalError(c)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": record})
+}
+
+func (ctrl *BaseController[T]) Update(c *gin.Context) {
+	var input map[string]any
+	if err := c.ShouldBindJSON(&input); err != nil || len(input) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON body"})
+		return
+	}
+
+	updates := make(map[string]any, len(input))
+	for key, value := range input {
+		column, allowed := ctrl.updateFields[key]
+		if !allowed {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "field cannot be updated: " + key})
 			return
 		}
-		params.Page = parsedPage
+		updates[column] = value
 	}
 
-	// check if limit query parameter is provided and parse it
-	if limitParam := c.Query("limit"); limitParam != "" {
-		parsedLimit, err := strconv.Atoi(limitParam)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid limit parameter",
-			})
-			return
-		}
-		params.Limit = parsedLimit
-	}
-
-	// use reflection to create a new slice of the correct type
-	sliceType := reflect.SliceOf(reflect.TypeOf(ctrl.model))
-	records := reflect.New(sliceType).Interface()
-
-	// calculate offset based on page and limit
-	offset := (params.Page - 1) * params.Limit
-
-	// pass ctx to database queries
-	// use WithContext() method of gorm.DB to pass the context
-	ctrl.db = ctrl.db.WithContext(ctx)
-
-	// pass a pointer to the slice to Offset() and Limit() methods
-	ctrl.db.Offset(offset).Limit(params.Limit).Find(records)
-
-	// check if records are empty and return 404 if true
-	if reflect.ValueOf(records).Elem().Len() == 0 {
-		c.AbortWithStatusJSON(http.StatusOK, gin.H{
-			"message": "No results",
-		})
+	var record T
+	result := ctrl.db.WithContext(c.Request.Context()).Model(&record).
+		Where("id = ?", c.Param("id")).Updates(updates)
+	if result.Error != nil {
+		handleWriteError(c, result.Error)
 		return
 	}
-
-	count := int64(reflect.ValueOf(records).Elem().Len())
-
-	// convert slice of user models to slice of interfaces
-	var interfaceSlice []interface{}
-	for _, record := range reflect.ValueOf(records).Elem().Interface().([]models.User) {
-		interfaceSlice = append(interfaceSlice, record)
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "resource not found"})
+		return
 	}
-
-	// add full url and count to response
-	scheme := "http"
-	if c.Request.TLS != nil {
-		scheme = "https"
-	}
-	baseURL := fmt.Sprintf("%s://%s%s", scheme, c.Request.Host, c.Request.URL.String())
-	response := gin.H{
-		"count": count,
-		"url":   baseURL,
-		"data":  interfaceSlice,
-	}
-
-	c.JSON(http.StatusOK, response)
+	ctrl.Get(c)
 }
 
-func (ctrl *BaseController) Get(c *gin.Context) {
-	id := c.Param("id")
-
-	// use reflection to create a new slice of the correct type
-	sliceType := reflect.SliceOf(reflect.TypeOf(ctrl.model))
-	record := reflect.New(sliceType).Interface()
-
-	if err := ctrl.db.First(record, "id = ?", id).Error; err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+func (ctrl *BaseController[T]) Delete(c *gin.Context) {
+	var record T
+	result := ctrl.db.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).Delete(&record)
+	if result.Error != nil {
+		internalError(c)
 		return
 	}
-	c.JSON(http.StatusOK, record)
-}
-
-func (ctrl *BaseController) Create(c *gin.Context) {
-	model := reflect.New(reflect.TypeOf(ctrl.model)).Interface()
-
-	if err := c.ShouldBindJSON(&model); err != nil {
-		log.Printf("%s: %s", "Field validation failed", err)
-		c.AbortWithStatus(http.StatusBadRequest)
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "resource not found"})
 		return
 	}
-
-	tx := ctrl.db.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-			panic(r)
-		}
-	}()
-
-	if err := tx.Create(model).Error; err != nil {
-		tx.Rollback()
-		panic(err)
-	}
-
-	tx.Commit()
-
-	c.JSON(http.StatusCreated, model)
-}
-
-func (ctrl *BaseController) Update(c *gin.Context) {
-	id := c.Param("id")
-	model := reflect.New(reflect.TypeOf(ctrl.model)).Interface()
-
-	if err := ctrl.db.First(model, id).Error; err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	if err := c.ShouldBindJSON(&ctrl.model); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	ctrl.db.Save(&ctrl.model)
-	c.JSON(http.StatusOK, &ctrl.model)
-}
-
-func (ctrl *BaseController) Delete(c *gin.Context) {
-	id := c.Param("id")
-	var record interface{}
-	if err := ctrl.db.First(&record, id).Error; err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	ctrl.db.Delete(&record)
 	c.Status(http.StatusNoContent)
+}
+
+func positiveQueryInt(c *gin.Context, key string, fallback, maximum int) (int, bool) {
+	raw := c.Query(key)
+	if raw == "" {
+		return fallback, true
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 1 || maximum > 0 && value > maximum {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid " + key + " parameter"})
+		return 0, false
+	}
+	return value, true
+}
+
+func handleWriteError(c *gin.Context, err error) {
+	var pgError *pgconn.PgError
+	if errors.As(err, &pgError) && pgError.Code == "23505" {
+		c.JSON(http.StatusConflict, gin.H{"error": "resource already exists"})
+		return
+	}
+	internalError(c)
+}
+
+func internalError(c *gin.Context) {
+	c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 }

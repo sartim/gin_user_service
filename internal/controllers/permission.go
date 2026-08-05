@@ -12,13 +12,13 @@ import (
 )
 
 type PermissionController struct {
-	*BaseController
+	*BaseController[models.Permission]
 }
 
 func NewPermissionController(db *gorm.DB) *PermissionController {
-	var permission models.Permission
-	var schema schemas.PermissionSchema
-	return &PermissionController{NewBaseController(db, permission, schema)}
+	return &PermissionController{NewBaseController[models.Permission](db, map[string]string{
+		"name": "name", "description": "description",
+	})}
 }
 
 func (ctrl *PermissionController) Create(c *gin.Context) {
@@ -28,6 +28,7 @@ func (ctrl *PermissionController) Create(c *gin.Context) {
 		log.Printf("%s: %s", "Field validation failed", err)
 		errors := validation.ValidateSchema(err, "body")
 		c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
+		return
 	}
 
 	// Set the hashed password in the permission model
@@ -40,11 +41,11 @@ func (ctrl *PermissionController) Create(c *gin.Context) {
 	result := ctrl.db.Create(&permission)
 
 	if result.Error != nil {
-		c.AbortWithStatusJSON(500, gin.H{"error": result.Error.Error()})
+		handleWriteError(c, result.Error)
 		return
 	}
 
-	c.JSON(200, gin.H{"permission": permission})
+	c.JSON(http.StatusCreated, gin.H{"data": permission})
 }
 
 func (ctrl *PermissionController) RegisterPermissionRoutes(
@@ -52,9 +53,9 @@ func (ctrl *PermissionController) RegisterPermissionRoutes(
 	permissionRouter := router.Group("/permissions")
 	{
 		permissionRouter.GET("", ctrl.GetAll)
-		permissionRouter.GET(":id", ctrl.Get)
+		permissionRouter.GET("/:id", ctrl.Get)
 		permissionRouter.POST("", ctrl.Create)
-		permissionRouter.PUT(":id", ctrl.Update)
-		permissionRouter.DELETE(":id", ctrl.Delete)
+		permissionRouter.PATCH("/:id", ctrl.Update)
+		permissionRouter.DELETE("/:id", ctrl.Delete)
 	}
 }

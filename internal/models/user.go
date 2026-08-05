@@ -12,6 +12,7 @@ type User struct {
 	Email     string    `json:"email" gorm:"column:email;index:idx_name,unique"`
 	Password  string    `json:"-" gorm:"column:password"`
 	IsActive  bool      `json:"is_active" gorm:"column:is_active;default=false"`
+	IsAdmin   bool      `json:"is_admin" gorm:"column:is_admin;default=false"`
 	Deleted   bool      `json:"deleted" gorm:"column:deleted;default=false"`
 }
 

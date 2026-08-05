@@ -1,71 +1,67 @@
 package controllers
 
 import (
+	"errors"
+	"net/http"
+	"strings"
+
 	"gin-shop-api/internal/helpers/crypto"
-	"gin-shop-api/internal/helpers/validation"
-	"gin-shop-api/internal/middleware"
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/schemas"
-	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 type UserController struct {
-	*BaseController
+	*BaseController[models.User]
 }
 
 func NewUserController(db *gorm.DB) *UserController {
-	var user models.User
-	var schema schemas.UserSchema
-	return &UserController{NewBaseController(db, user, schema)}
+	return &UserController{NewBaseController[models.User](db, map[string]string{
+		"first_name": "first_name",
+		"last_name":  "last_name",
+		"is_active":  "is_active",
+		"is_admin":   "is_admin",
+	})}
 }
 
 func (ctrl *UserController) Create(c *gin.Context) {
 	var input schemas.UserSchema
-
 	if err := c.ShouldBindJSON(&input); err != nil {
-		log.Printf("%s: %s", "Field validation failed", err)
-		errors := validation.ValidateSchema(err, "body")
-		if errors != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
-			return
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing json body"})
-			return
-		}
-	}
-
-	// Set the hashed password in the user model
-	user := models.User{
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
-		Email:     input.Email,
-		Password:  crypto.HashPassword(input.Password),
-		IsActive:  false,
-	}
-
-	// Save the user to the database
-	result := ctrl.db.Create(&user)
-
-	if result.Error != nil {
-		c.AbortWithStatusJSON(500, gin.H{"error": result.Error.Error()})
+		writeValidationError(c, err)
 		return
 	}
 
-	c.JSON(200, gin.H{"user": user})
+	hashedPassword, err := crypto.HashPassword(input.Password)
+	if err != nil {
+		internalError(c)
+		return
+	}
+	user := models.User{
+		FirstName: strings.TrimSpace(input.FirstName),
+		LastName:  strings.TrimSpace(input.LastName),
+		Email:     strings.ToLower(strings.TrimSpace(input.Email)),
+		Password:  hashedPassword,
+		IsActive:  input.IsActive,
+		IsAdmin:   input.IsAdmin,
+	}
+	if err := ctrl.db.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
+		handleWriteError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": user})
 }
 
-func (ctrl *UserController) RegisterUserRoutes(router *gin.RouterGroup) {
-	router.Use(middleware.RequireAuth())
-	userRouter := router.Group("/users")
-	{
-		userRouter.GET("", ctrl.GetAll)
-		userRouter.GET(":id", ctrl.Get)
-		userRouter.POST("", ctrl.Create)
-		userRouter.PUT(":id", ctrl.Update)
-		userRouter.DELETE(":id", ctrl.Delete)
-	}
+func (ctrl *UserController) RegisterRoutes(router *gin.RouterGroup) {
+	users := router.Group("/users")
+	users.GET("", ctrl.GetAll)
+	users.GET("/:id", ctrl.Get)
+	users.POST("", ctrl.Create)
+	users.PATCH("/:id", ctrl.Update)
+	users.DELETE("/:id", ctrl.Delete)
+}
+
+func isNotFound(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound)
 }

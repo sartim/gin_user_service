@@ -4,6 +4,10 @@ files:
   - source: /
     destination: /home/ubuntu/user-service
 hooks:
+  ApplicationStop:
+    - location: aws-codedeploy-helpers/ApplicationStop.sh
+      timeout: 60
+      runas: root
   BeforeInstall:
     - location: aws-codedeploy-helpers/BeforeInstall.sh
       timeout: 1000
@@ -15,4 +19,8 @@ hooks:
   ApplicationStart:
     - location: aws-codedeploy-helpers/ApplicationStart.sh
       timeout: 1000
+      runas: root
+  ValidateService:
+    - location: aws-codedeploy-helpers/ValidateService.sh
+      timeout: 60
       runas: root

@@ -1,0 +1,21 @@
+[Unit]
+Description=Gin User Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/user-service
+EnvironmentFile=/etc/gin-user-service.env
+ExecStart=/home/ubuntu/user-service/user-service --action=run-server
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

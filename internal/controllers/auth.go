@@ -1,88 +1,86 @@
 package controllers
 
 import (
+	"errors"
+	"net/http"
+	"time"
+
 	"gin-shop-api/internal/helpers/validation"
 	"gin-shop-api/internal/models"
-	"gin-shop-api/internal/repository"
 	"gin-shop-api/internal/schemas"
-	"log"
-	"net/http"
-	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
-func GenerateJWT(c *gin.Context) {
+const tokenIssuer = "gin-user-service"
+
+type AuthController struct {
+	db       *gorm.DB
+	secret   []byte
+	tokenTTL time.Duration
+}
+
+func NewAuthController(db *gorm.DB, secret string, tokenTTL time.Duration) *AuthController {
+	return &AuthController{db: db, secret: []byte(secret), tokenTTL: tokenTTL}
+}
+
+func (ctrl *AuthController) GenerateJWT(c *gin.Context) {
 	var input schemas.AuthSchema
-
-	// Validate fields
 	if err := c.ShouldBindJSON(&input); err != nil {
-		log.Printf("%s: %s", "Field validation failed", err)
-		errors := validation.ValidateSchema(err, "body")
-		if errors != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
-			return
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing json body"})
-			return
-		}
+		writeValidationError(c, err)
+		return
 	}
 
-	// Lookup user
 	var user models.User
-	repository.DB.First(&user, "email = ?", input.Email)
-
-	if user.ID == uuid.Nil {
-		log.Printf("%s", "Email does not exist")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid email or password",
-		})
+	err := ctrl.db.WithContext(c.Request.Context()).First(&user, "email = ?", input.Email).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) || err == nil && !user.IsActive {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
+		return
+	}
+	if err != nil {
+		internalError(c)
+		return
+	}
+	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)) != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
 		return
 	}
 
-	// Check password
-	hashedPassword := []byte(user.Password)
-	password := []byte(input.Password)
-	err := bcrypt.CompareHashAndPassword(hashedPassword, password)
-	if err != nil {
-		log.Printf("%s: %s", "Password does not match", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid email or password",
-		})
-		return
+	now := time.Now()
+	claims := jwt.RegisteredClaims{
+		Subject:   user.ID.String(),
+		Issuer:    tokenIssuer,
+		IssuedAt:  jwt.NewNumericDate(now),
+		NotBefore: jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(ctrl.tokenTTL)),
 	}
-
-	// Generate token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(), // Expired in 30 days
-	})
-
-	// Sign and get encoded string
-	var sampleSecretKey = []byte(os.Getenv("SECRET_KEY"))
-	tokenString, err := token.SignedString(sampleSecretKey)
-
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(ctrl.secret)
 	if err != nil {
-		log.Printf("%s: %s", "Failed to create token", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Failed to create token",
-		})
+		internalError(c)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"access": tokenString,
-		"user":   &user,
+		"access_token": tokenString,
+		"token_type":   "Bearer",
+		"expires_in":   int64(ctrl.tokenTTL.Seconds()),
+		"user":         user,
 	})
 }
 
-func RegisterAuthRoutes(router *gin.RouterGroup) {
-	authRouter := router.Group("/auth")
-	{
-		authRouter.POST("/generate-jwt", GenerateJWT)
+func (ctrl *AuthController) RegisterRoutes(router *gin.RouterGroup) {
+	router.POST("/auth/token", ctrl.GenerateJWT)
+}
+
+func writeValidationError(c *gin.Context, err error) {
+	errors := validation.ValidateSchema(err, "body")
+	if errors == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON body"})
+		return
 	}
+	c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
 }

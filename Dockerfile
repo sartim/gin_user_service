@@ -1,37 +1,23 @@
-FROM ubuntu:22.04
+# syntax=docker/dockerfile:1
+FROM golang:1.26.5-alpine AS build
 
-ARG DB_URL
-ARG TIMEZONE
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/user-service ./cmd
 
-# ENV
-ENV DB_URL=$DB_URL
-ENV TZ=$TIMEZONE
+FROM alpine:3.21
 
-# Set the timezone
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# Update and install necessary packages
-RUN apt update
-RUN apt install -y redis-server wget
-RUN apt install -y postgresql postgresql-contrib
-RUN apt-get install -y  bison mercurial
-RUN wget https://go.dev/dl/go1.19.10.linux-amd64.tar.gz
-RUN tar -C . -xzf go1.19.10.linux-amd64.tar.gz
-
-# Copy the application code
+RUN apk add --no-cache ca-certificates tzdata \
+    && addgroup -S app \
+    && adduser -S -G app -H app
 WORKDIR /app
-COPY . /app
+COPY --from=build --chown=app:app /out/user-service /app/user-service
 
-RUN export GOROOT=$HOME/go
-RUN export PATH=$PATH:$GOROOT/bin
-RUN /go/bin/go mod init gin-shop-api
-RUN /go/bin/go mod tidy
-
-# Build the app to binary
-RUN mkdir build && /go/bin/go build -o ./build/user-service ./cmd/main.go   
-
-# Expose port 8000 for the app
+USER app
 EXPOSE 8000
-
-# Start the app
-CMD ["/app/build/user-service", "--action=run-server"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:8000/health/live || exit 1
+ENTRYPOINT ["/app/user-service"]
+CMD ["--action=run-server"]

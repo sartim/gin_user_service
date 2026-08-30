@@ -68,6 +68,7 @@ Use the returned token as `Authorization: Bearer <token>`.
 gofmt -w .
 go vet ./...
 go test -race -coverpkg=./... -cover ./...
+INTEGRATION_DB_URL="postgres://postgres:postgres@localhost:5432/user_service_test?sslmode=disable" go test ./tests -run Postgres
 go build ./cmd
 docker build -t gin-user-service .
 ```

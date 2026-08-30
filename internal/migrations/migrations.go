@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:embed sql/*.sql
+//go:embed sql/*.up.sql sql/*.down.sql
 var migrationFiles embed.FS
 
 type migration struct {
@@ -22,6 +22,7 @@ type migration struct {
 	name     string
 	sql      string
 	checksum string
+	down     string
 }
 
 // Up applies each migration exactly once, in version order.
@@ -79,8 +80,41 @@ func Up(ctx context.Context, db *gorm.DB) error {
 	return nil
 }
 
+// Down rolls back the most recently applied migration.
+func Down(ctx context.Context, db *gorm.DB) error {
+	var applied struct {
+		Version int64
+		Name    string
+	}
+	if err := db.WithContext(ctx).Table("schema_migrations").Order("version DESC").Take(&applied).Error; err != nil {
+		return fmt.Errorf("find latest migration: %w", err)
+	}
+	items, err := load()
+	if err != nil {
+		return err
+	}
+	for _, item := range items {
+		if item.version != applied.Version || item.name != applied.Name {
+			continue
+		}
+		if strings.TrimSpace(item.down) == "" {
+			return fmt.Errorf("migration %d (%s) has no rollback", item.version, item.name)
+		}
+		if err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			if err := tx.Exec(item.down).Error; err != nil {
+				return fmt.Errorf("rollback migration %d (%s): %w", item.version, item.name, err)
+			}
+			return tx.Exec("DELETE FROM schema_migrations WHERE version = ?", item.version).Error
+		}); err != nil {
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("migration %d (%s) is not present in source", applied.Version, applied.Name)
+}
+
 func load() ([]migration, error) {
-	entries, err := fs.Glob(migrationFiles, "sql/*.sql")
+	entries, err := fs.Glob(migrationFiles, "sql/*.up.sql")
 	if err != nil {
 		return nil, fmt.Errorf("discover migrations: %w", err)
 	}
@@ -99,7 +133,12 @@ func load() ([]migration, error) {
 		if err != nil {
 			return nil, fmt.Errorf("read migration %q: %w", base, err)
 		}
-		result = append(result, migration{version: version, name: strings.TrimSuffix(parts[1], ".sql"), sql: string(contents), checksum: fmt.Sprintf("%x", sha256.Sum256(contents))})
+		name := strings.TrimSuffix(parts[1], ".up.sql")
+		down, err := migrationFiles.ReadFile(strings.TrimSuffix(entry, ".up.sql") + ".down.sql")
+		if err != nil {
+			return nil, fmt.Errorf("read rollback for %q: %w", base, err)
+		}
+		result = append(result, migration{version: version, name: name, sql: string(contents), checksum: fmt.Sprintf("%x", sha256.Sum256(contents)), down: string(down)})
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].version < result[j].version })
 	for i := 1; i < len(result); i++ {

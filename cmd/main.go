@@ -31,6 +31,7 @@ import (
 const (
 	actionRunServer       = "run-server"
 	actionMigrate         = "migrate"
+	actionRollback        = "rollback"
 	actionDropTables      = "drop-tables"
 	actionCreateSuperUser = "create-super-user"
 )
@@ -64,6 +65,8 @@ func main() {
 		err = runServer(db, cfg)
 	case actionMigrate:
 		err = migrate(db)
+	case actionRollback:
+		err = migrations.Down(context.Background(), db)
 	case actionDropTables:
 		err = dropTables(db)
 	case actionCreateSuperUser:

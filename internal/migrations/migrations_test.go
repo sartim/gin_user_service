@@ -11,11 +11,11 @@ func TestLoadMigrationsIsOrderedAndChecksummed(t *testing.T) {
 		t.Fatal("expected at least one migration")
 	}
 	for i, item := range items {
-		if item.checksum == "" {
-			t.Fatalf("migration %d has no checksum", item.version)
+		if item.checksum == "" || item.down == "" {
+			t.Fatalf("migration %d is incomplete", item.version)
 		}
 		if i > 0 && items[i-1].version >= item.version {
-			t.Fatalf("migrations are not strictly ordered")
+			t.Fatal("migrations are not ordered")
 		}
 	}
 }

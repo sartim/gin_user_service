@@ -16,6 +16,7 @@ Copy the example configuration and replace the development secret:
 cp .env.example .env
 docker compose up -d postgres
 go run ./cmd --action=migrate
+go run ./cmd --action=rollback # rolls back the latest migration; destructive
 go run ./cmd --action=run-server
 ```
 

@@ -16,6 +16,9 @@ unrelated changes together.
 Migration files use the format `NNN_description.sql`. Never edit a migration
 after it has been applied; add a new migration instead. Applied migrations are
 checksum-verified at startup.
+checksum-verified at startup. Each migration must include matching
+`NNN_description.up.sql` and `NNN_description.down.sql` files. Rollbacks are
+manual, one migration at a time, and must be reviewed before production use.
 
 ## Semantic versioning
 

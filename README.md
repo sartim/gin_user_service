@@ -75,7 +75,7 @@ CI runs formatting, vet, race-enabled tests, coverage, a binary build, dependenc
 
 ## Deployment notes
 
-- Run migrations as a separate, controlled release step before starting new application instances.
+- Run `go run ./cmd --action=migrate` as a separate, controlled release step before starting new application instances. Migrations are versioned and tracked in `schema_migrations`.
 - Store production configuration in a secret manager and expose it to the service at runtime.
 - Deploy behind TLS and an ingress/load balancer with explicit trusted proxy configuration.
 - Use `/health/live` for liveness and `/health/ready` for readiness checks.

@@ -13,6 +13,10 @@ unrelated changes together.
 5. Open a pull request and wait for CI and review.
 6. Merge only after the checklist is complete.
 
+Migration files use the format `NNN_description.sql`. Never edit a migration
+after it has been applied; add a new migration instead. Applied migrations are
+checksum-verified at startup.
+
 ## Semantic versioning
 
 Use `MAJOR.MINOR.PATCH` tags prefixed with `v`:

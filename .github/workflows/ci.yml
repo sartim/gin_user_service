@@ -53,7 +53,7 @@ jobs:
         run: docker build --tag gin-user-service:${GITHUB_SHA} .
       - name: Validate migration filenames
         run: |
-          versions=$(find internal/migrations/sql -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sed -E 's/^([0-9]+)_.*/\1/' | sort -n)
+          versions=$(for migration in internal/migrations/sql/*.up.sql; do basename "$migration"; done | sed -E 's/^([0-9]+)_.*/\1/' | sort -n)
           test -n "$versions"
           test "$(printf '%s\n' "$versions" | uniq -d)" = ""
           for migration in internal/migrations/sql/*.up.sql; do

@@ -1,0 +1,30 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: user-service
+    main: ./cmd
+    binary: user-service
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: user-service
+    ids: [user-service]
+    formats: [tar.gz]
+    files:
+      - README.md
+      - CHANGELOG.md
+      - appspec.yml
+      - aws-codedeploy-helpers/**
+      - internal/migrations/**
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  disable: true

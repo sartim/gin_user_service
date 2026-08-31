@@ -1,0 +1,6 @@
+{
+  "provider": {"name": "github", "options": {"github_repository": "sartim/gin_user_service"}},
+  "commit-analyzer": {"name": "conventional"},
+  "changelog-generator": {"name": "default"},
+  "ci-condition": {"name": "github"}
+}

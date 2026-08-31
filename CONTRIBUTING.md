@@ -31,7 +31,8 @@ After a PR is merged into `master`, the release workflow analyzes Conventional
 Commit messages with `go-semantic-release`, calculates the next semantic
 version, creates the Git tag, builds release archives with GoReleaser, and
 publishes the GitHub Release automatically. Do not create release tags
-manually.
+manually or maintain a separate version file; Git tags are the single source
+of truth for released versions.
 
 Use Conventional Commit prefixes so release impact can be calculated reliably:
 `fix:` for patches, `feat:` for minor releases, and `BREAKING CHANGE:` or `!`

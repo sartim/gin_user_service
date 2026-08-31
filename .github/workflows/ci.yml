@@ -32,8 +32,8 @@ jobs:
     env:
       INTEGRATION_DB_URL: postgres://postgres:postgres@localhost:5432/user_service_test?sslmode=disable
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.26.5"
           cache: true

@@ -16,6 +16,7 @@ Copy the example configuration and replace the development secret:
 cp .env.example .env
 docker compose up -d postgres
 go run ./cmd --action=migrate
+go run ./cmd --action=rollback # rolls back the latest migration; destructive
 go run ./cmd --action=run-server
 ```
 
@@ -67,6 +68,7 @@ Use the returned token as `Authorization: Bearer <token>`.
 gofmt -w .
 go vet ./...
 go test -race -coverpkg=./... -cover ./...
+INTEGRATION_DB_URL="postgres://postgres:postgres@localhost:5432/user_service_test?sslmode=disable" go test ./tests -run Postgres
 go build ./cmd
 docker build -t gin-user-service .
 ```
@@ -75,7 +77,7 @@ CI runs formatting, vet, race-enabled tests, coverage, a binary build, dependenc
 
 ## Deployment notes
 
-- Run migrations as a separate, controlled release step before starting new application instances.
+- Run `go run ./cmd --action=migrate` as a separate, controlled release step before starting new application instances. Migrations are versioned and tracked in `schema_migrations`.
 - Store production configuration in a secret manager and expose it to the service at runtime.
 - Deploy behind TLS and an ingress/load balancer with explicit trusted proxy configuration.
 - Use `/health/live` for liveness and `/health/ready` for readiness checks.

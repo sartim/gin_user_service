@@ -18,6 +18,7 @@ import (
 	"gin-shop-api/internal/controllers"
 	"gin-shop-api/internal/helpers/crypto"
 	"gin-shop-api/internal/middleware"
+	"gin-shop-api/internal/migrations"
 	"gin-shop-api/internal/models"
 	"gin-shop-api/internal/repository"
 
@@ -30,6 +31,7 @@ import (
 const (
 	actionRunServer       = "run-server"
 	actionMigrate         = "migrate"
+	actionRollback        = "rollback"
 	actionDropTables      = "drop-tables"
 	actionCreateSuperUser = "create-super-user"
 )
@@ -63,6 +65,8 @@ func main() {
 		err = runServer(db, cfg)
 	case actionMigrate:
 		err = migrate(db)
+	case actionRollback:
+		err = migrations.Down(context.Background(), db)
 	case actionDropTables:
 		err = dropTables(db)
 	case actionCreateSuperUser:
@@ -142,16 +146,7 @@ func runServer(db *gorm.DB, cfg config.App) error {
 }
 
 func migrate(db *gorm.DB) error {
-	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; err != nil {
-		return fmt.Errorf("create UUID extension: %w", err)
-	}
-	if err := db.AutoMigrate(
-		&models.User{}, &models.Role{}, &models.Permission{},
-		&models.UserPermission{}, &models.RolePermission{},
-	); err != nil {
-		return fmt.Errorf("migrate schema: %w", err)
-	}
-	return nil
+	return migrations.Up(context.Background(), db)
 }
 
 func dropTables(db *gorm.DB) error {

@@ -15,7 +15,6 @@ unrelated changes together.
 
 Migration files use the format `NNN_description.sql`. Never edit a migration
 after it has been applied; add a new migration instead. Applied migrations are
-checksum-verified at startup.
 checksum-verified at startup. Each migration must include matching
 `NNN_description.up.sql` and `NNN_description.down.sql` files. Rollbacks are
 manual, one migration at a time, and must be reviewed before production use.
@@ -28,18 +27,15 @@ Use `MAJOR.MINOR.PATCH` tags prefixed with `v`:
 - `MINOR`: backward-compatible feature (`v0.2.0`).
 - `MAJOR`: breaking API, schema, or operational contract change (`v1.0.0`).
 
-Before tagging, move the relevant `Unreleased` entries into a dated version
-section, update `VERSION`, and merge that release-preparation PR. Create the
-tag from the merge commit:
+After a PR is merged into `master`, the release workflow analyzes Conventional
+Commit messages with `go-semantic-release`, calculates the next semantic
+version, creates the Git tag, builds release archives with GoReleaser, and
+publishes the GitHub Release automatically. Do not create release tags
+manually.
 
-```sh
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin v0.1.0
-```
-
-Pushing a `vMAJOR.MINOR.PATCH` tag starts the GitHub release workflow, which
-validates the tag, builds the binary and container, and publishes a GitHub
-Release using the matching changelog section.
+Use Conventional Commit prefixes so release impact can be calculated reliably:
+`fix:` for patches, `feat:` for minor releases, and `BREAKING CHANGE:` or `!`
+for major releases.
 
 ## Progress tracking
 

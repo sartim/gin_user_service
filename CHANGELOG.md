@@ -7,7 +7,7 @@ All notable changes to this project are documented here. Entries follow
 
 Changes planned for the next release are recorded here before implementation.
 
-## [0.2.0] - 2026-08-31
+## [1.0.1] - 2026-08-31
 
 - Added versioned PostgreSQL migrations with checksums and controlled rollback.
 - Added PostgreSQL migration integration coverage.
@@ -29,6 +29,6 @@ Initial tracked production-hardening release candidate.
 
 ## Release links
 
-[Unreleased]: https://github.com/sartim/gin_user_service/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/sartim/gin_user_service/releases/tag/v0.2.0
+[Unreleased]: https://github.com/sartim/gin_user_service/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/sartim/gin_user_service/releases/tag/v1.0.1
 [0.1.0]: https://github.com/sartim/gin_user_service/releases/tag/v0.1.0

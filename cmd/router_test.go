@@ -57,6 +57,25 @@ func TestRouterHealthAndAuthentication(t *testing.T) {
 	}
 }
 
+func TestRouterMetrics(t *testing.T) {
+	db, router := testRouter(t)
+	sqlDB, _ := db.DB()
+	defer sqlDB.Close()
+
+	response := routerRequest(router, http.MethodGet, "/health/live", nil, "")
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected live health 200, got %d", response.Code)
+	}
+
+	response = routerRequest(router, http.MethodGet, "/metrics", nil, "")
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected metrics 200, got %d", response.Code)
+	}
+	if !bytes.Contains(response.Body.Bytes(), []byte("http_requests_total")) {
+		t.Fatal("expected HTTP request counter in metrics output")
+	}
+}
+
 func TestRouterAdminCanAccessUsers(t *testing.T) {
 	db, router := testRouter(t)
 	sqlDB, _ := db.DB()

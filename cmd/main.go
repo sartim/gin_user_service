@@ -84,7 +84,9 @@ func newRouter(db *gorm.DB, cfg config.App) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery(), middleware.CORS(cfg.AllowedOrigins))
+	metrics := middleware.NewMetrics()
+	router.Use(gin.Logger(), gin.Recovery(), metrics.Middleware(), middleware.CORS(cfg.AllowedOrigins))
+	router.GET("/metrics", metrics.Handler())
 
 	router.GET("/health/live", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})

@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	Environment = "ENV"
-	Port        = "PORT"
-	DBURL       = "DB_URL"
-	SecretKey   = "SECRET_KEY"
+	Environment  = "ENV"
+	Port         = "PORT"
+	DBURL        = "DB_URL"
+	SecretKey    = "SECRET_KEY"
+	MetricsToken = "METRICS_TOKEN"
 )
 
 type App struct {
@@ -20,6 +21,7 @@ type App struct {
 	Port           string
 	DatabaseURL    string
 	SecretKey      string
+	MetricsToken   string
 	AllowedOrigins []string
 	AccessTokenTTL time.Duration
 }
@@ -30,6 +32,7 @@ func Load() (App, error) {
 		Port:           valueOrDefault(Port, "8000"),
 		DatabaseURL:    strings.TrimSpace(os.Getenv(DBURL)),
 		SecretKey:      os.Getenv(SecretKey),
+		MetricsToken:   strings.TrimSpace(os.Getenv(MetricsToken)),
 		AllowedOrigins: splitAndTrim(valueOrDefault("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
 		AccessTokenTTL: 15 * time.Minute,
 	}

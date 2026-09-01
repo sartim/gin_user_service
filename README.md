@@ -35,6 +35,7 @@ The service listens on `http://localhost:8000` by default.
 | --- | --- | --- | --- |
 | `DB_URL` | Yes | — | PostgreSQL connection URL |
 | `SECRET_KEY` | Yes | — | JWT HMAC secret containing at least 32 characters |
+| `METRICS_TOKEN` | No | — | Bearer token required by `/metrics` when configured |
 | `PORT` | No | `8000` | HTTP listening port |
 | `ENV` | No | `development` | Set to `production` for Gin release mode |
 | `CORS_ALLOWED_ORIGINS` | No | `http://localhost:3000` | Comma-separated browser origins |

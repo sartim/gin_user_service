@@ -36,7 +36,8 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: "1.26.5"
-          cache: true
+          # Disable setup-go cache until GitHub's cache archive restore issue is resolved.
+          cache: false
       - name: Check formatting
         run: test -z "$(gofmt -l .)"
       - name: Vet

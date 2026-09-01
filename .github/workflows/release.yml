@@ -28,6 +28,6 @@ jobs:
           GOBIN="${RUNNER_TEMP}/bin" go install github.com/go-semantic-release/semantic-release/v2/cmd/semantic-release@v2.31.0
           echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
       - name: Run semantic-release
-        run: semantic-release --hooks goreleaser
+        run: semantic-release --allow-no-changes --hooks goreleaser
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

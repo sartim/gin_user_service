@@ -47,9 +47,9 @@ jobs:
       - name: Build binary
         run: CGO_ENABLED=0 go build -trimpath -o build/user-service ./cmd
       - name: Scan Go dependencies
-        uses: golang/govulncheck-action@v1
-        with:
-          go-package: ./...
+        run: |
+          GOBIN="${RUNNER_TEMP}/bin" go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
+          "${RUNNER_TEMP}/bin/govulncheck" ./...
       - name: Build container
         run: docker build --tag gin-user-service:${GITHUB_SHA} .
       - name: Validate migration filenames

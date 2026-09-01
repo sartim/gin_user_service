@@ -23,8 +23,11 @@ jobs:
           go vet ./...
           go test ./...
           CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o user-service ./cmd
-      - uses: go-semantic-release/action@v1
-        with:
-          hooks: goreleaser
+      - name: Install semantic-release
+        run: |
+          GOBIN="${RUNNER_TEMP}/bin" go install github.com/go-semantic-release/semantic-release/v2/cmd/semantic-release@v2.31.0
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+      - name: Run semantic-release
+        run: semantic-release --hooks goreleaser
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

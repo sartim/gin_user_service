@@ -76,6 +76,27 @@ func TestRouterMetrics(t *testing.T) {
 	}
 }
 
+func TestRouterMetricsRequiresTokenWhenConfigured(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open("file:router-metrics-auth?mode=memory&cache=shared"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open test database: %v", err)
+	}
+	if err := db.Exec(`CREATE TABLE user (id text PRIMARY KEY, created_at datetime, updated_at datetime, deleted_at datetime, first_name text, last_name text, email text UNIQUE, password text, is_active numeric, is_admin numeric, deleted numeric)`).Error; err != nil {
+		t.Fatalf("create test user table: %v", err)
+	}
+	cfg := config.App{Environment: "test", Port: "8000", SecretKey: testSecret, MetricsToken: "metrics-test-token", AccessTokenTTL: time.Hour}
+	router := newRouter(db, cfg)
+
+	response := routerRequest(router, http.MethodGet, "/metrics", nil, "")
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected metrics 401 without token, got %d", response.Code)
+	}
+	response = routerRequest(router, http.MethodGet, "/metrics", nil, "metrics-test-token")
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected metrics 200 with token, got %d", response.Code)
+	}
+}
+
 func TestRouterAdminCanAccessUsers(t *testing.T) {
 	db, router := testRouter(t)
 	sqlDB, _ := db.DB()

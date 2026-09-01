@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"crypto/subtle"
+	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -50,7 +53,16 @@ func (m *Metrics) Middleware() gin.HandlerFunc {
 	}
 }
 
-func (m *Metrics) Handler() gin.HandlerFunc {
+func (m *Metrics) Handler(token string) gin.HandlerFunc {
 	handler := promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{})
-	return gin.WrapH(handler)
+	return func(c *gin.Context) {
+		if token != "" {
+			provided := strings.TrimSpace(strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer "))
+			if subtle.ConstantTimeCompare([]byte(provided), []byte(token)) != 1 {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+		}
+		gin.WrapH(handler)(c)
+	}
 }

@@ -83,3 +83,4 @@ CI runs formatting, vet, race-enabled tests, coverage, a binary build, dependenc
 - Deploy behind TLS and an ingress/load balancer with explicit trusted proxy configuration.
 - Use `/health/live` for liveness and `/health/ready` for readiness checks.
 - Retain the prior release artifact so a failed deployment can be rolled back atomically.
+- See [Production observability](docs/observability.md) for Prometheus scraping and metrics-token guidance.
